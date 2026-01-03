@@ -1,54 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SPACE ANDIKA - V15.2 PRO FIX</title>
+    <style>
+        :root { --neon: #00f2ff; --pink: #ff007f; --gold: #ffd700; --space: #020205; --dark: #0a0a1a; --shield: #00ff88; --hp: #ff3333; }
+        body { margin: 0; background: var(--space); font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; touch-action: none; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        
+        /* UI Screens */
+        .screen { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); }
+        .active { display: flex; }
+        .box { background: var(--dark); padding: 20px; border-radius: 20px; border: 1px solid var(--neon); width: 85%; max-width: 360px; text-align: center; box-shadow: 0 0 20px rgba(0,242,255,0.2); }
+        
+        /* Buttons & Inputs */
+        .btn { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .btn:active { transform: scale(0.95); }
+        .btn-cyan { background: var(--neon); color: #000; }
+        .btn-gold { background: var(--gold); color: #000; }
+        .btn-grey { background: #333; color: #ccc; font-size: 10px; }
+        input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; background: #000; color: #fff; border: 1px solid #333; box-sizing: border-box; }
+        
+        /* Skin List & Rows */
+        .list-box { background: #050510; padding: 10px; border-radius: 12px; margin: 10px 0; max-height: 180px; overflow-y: auto; border: 1px solid #222; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #111; font-size: 12px; }
+        
+        /* HUD */
+        #hud { position: absolute; top: 15px; left: 15px; z-index: 50; font-weight: bold; pointer-events: none; }
+        .hp-bar-bg { width: 120px; height: 12px; background: #333; border-radius: 6px; margin-top: 5px; border: 1px solid #555; overflow: hidden; }
+        #hp-fill { height: 100%; background: var(--hp); transition: 0.3s; width: 100%; }
+        
+        .speed-bar { width: 100%; height: 6px; background: #222; border-radius: 3px; margin-top: 5px; overflow: hidden; }
+        .speed-fill { height: 100%; background: var(--neon); transition: 0.3s; }
+    </style>
+</head>
+<body>
 
+<div id="hud">
+    <div style="color:var(--neon)">SKOR: <span id="skor-val">0</span></div>
+    <div style="color:var(--gold)">KOIN: <span id="u-c-game">0</span></div>
+    <div class="hp-bar-bg"><div id="hp-fill"></div></div>
+    <div id="shield-stat" style="color:var(--shield); display:none; font-size: 10px; margin-top:5px;">🛡️ SHIELD ACTIVE</div>
+</div>
+
+<div id="scr-welcome" class="screen active">
+    <h1 style="color:var(--neon); text-shadow: 0 0 10px var(--neon);">SPACE ANDIKA</h1>
+    <div class="box">
+        <button class="btn btn-cyan" onclick="initAudio(); nav('scr-login')">LOGIN</button>
+        <button class="btn btn-grey" style="margin-top:10px" onclick="initAudio(); nav('scr-register')">BUAT AKUN</button>
+    </div>
+</div>
+
+<div id="scr-login" class="screen"><div class="box"><h2>LOGIN</h2><input type="text" id="l-u" placeholder="Username"><input type="password" id="l-p" placeholder="Password"><button class="btn btn-cyan" onclick="doLogin()">MASUK</button><button class="btn btn-grey" onclick="nav('scr-welcome')">KEMBALI</button></div></div>
+
+<div id="scr-register" class="screen"><div class="box"><h2>REGISTER</h2><input type="text" id="r-u" placeholder="Username Baru"><input type="password" id="r-p" placeholder="Password Baru"><button class="btn btn-cyan" onclick="doRegister()">DAFTAR</button><button class="btn btn-grey" onclick="nav('scr-welcome')">BATAL</button></div></div>
+
+<div id="scr-menu" class="screen">
+    <div class="box">
+        <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom: 10px;">
+            <span id="u-n" style="color:var(--neon)">-</span> <span id="u-c" style="color:var(--gold)">0 C</span>
+        </div>
+        
+        <div class="list-box" id="skin-list"></div>
+
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; margin-top:5px;">
+            <div style="font-size:10px; color:var(--gold); margin-bottom:5px;">MODIFIKASI PESAWAT</div>
+            <div style="display:flex; gap:10px;">
+                <input type="color" id="mod-color" onchange="updateMod()" style="width:50px; height:35px; padding:2px;">
+                <select id="mod-style" onchange="updateMod()">
+                    <option value="sharp">Sharp Wing</option>
+                    <option value="square">Square Tank</option>
+                </select>
+            </div>
+            <div style="text-align:left; font-size:10px; margin-top:8px;">SPEED: <span id="speed-stat">0</span></div>
+            <div class="speed-bar"><div id="speed-fill" class="speed-fill"></div></div>
+            <button id="up-btn" class="btn btn-gold" style="font-size:10px; padding:8px; margin-top:8px;" onclick="upgradeSpeed()">UPGRADE SPEED (+0.05) | 1500 C</button>
+        </div>
+
+        <button class="btn btn-cyan" style="margin-top:10px; font-size:1.2rem;" onclick="start()">MULAI PERANG</button>
+        <button class="btn btn-grey" onclick="nav('scr-welcome')">LOGOUT</button>
+    </div>
+</div>
+
+<div id="scr-over" class="screen"><div class="box"><h1 style="color:var(--hp)">GAME OVER</h1><p>Skor Akhir: <span id="final-skor">0</span></p><button class="btn btn-cyan" onclick="start()">MAIN LAGI</button><button class="btn btn-grey" onclick="nav('scr-menu')">MENU UTAMA</button></div></div>
+
+<canvas id="game"></canvas>
+
+<script>
+const cvs = document.getElementById('game'), ctx = cvs.getContext('2d');
+let user = null;
+let db = JSON.parse(localStorage.getItem('nd_v15_final_db')) || { users: {} };
+
+const SKINS = [
+    {id:0, n:"NEON BASIC", cost:0, baseSpeed:0.15, maxSpeed:0.35},
+    {id:1, n:"PHOENIX ELITE", cost:3000, baseSpeed:0.20, maxSpeed:0.50},
+    {id:2, n:"GALAXY TITAN", cost:8000, baseSpeed:0.25, maxSpeed:0.65}
+];
+
+let audioCtx;
+function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+function playSfx(f=400, d=0.1) { if(!audioCtx) return; const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.setValueAtTime(f, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+d); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+d); }
+
+function save() { localStorage.setItem('nd_v15_final_db', JSON.stringify(db)); }
+
+function nav(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(id === 'scr-menu') renderMenu();
+    game.running = false;
+    document.getElementById('hud').style.display = (id === 'none') ? 'block' : 'none';
 }
 
+function doLogin() {
+    let u = document.getElementById('l-u').value, p = document.getElementById('l-p').value;
+    const fix = (obj) => {
+        if(!obj.owned) obj.owned = [0];
+        if(obj.cur === undefined) obj.cur = 0;
+        if(obj.speedAdd === undefined) obj.speedAdd = 0;
+        if(!obj.modColor) obj.modColor = '#00f2ff';
+        if(!obj.modStyle) obj.modStyle = 'sharp';
+        return obj;
+    };
 
-
-});
+    if(u==='admin' && p==='123') { user=fix({u:'ADMIN', coins:99999, owned:[0,1,2], cur:2}); nav('scr-menu'); }
+    else if(db.users[u] && db.users[u].p===p) { user=fix(db.users[u]); nav('scr-menu'); } 
+    else alert("Login Gagal!");
 }
 
-let game = { running:false, px:0, py:0, tx:0, tilt:0, enemies:[], bullets:[], lastF:0, skor:0 };
+function doRegister() {
+    let u = document.getElementById('r-u').value, p = document.getElementById('r-p').value;
+    if(!u || db.users[u]) return alert("Username tidak tersedia!");
+    db.users[u] = {u, p, coins:1500, owned:[0], cur:0, speedAdd:0, modColor:'#00f2ff', modStyle:'sharp'};
+    save(); alert("Berhasil Terdaftar!"); nav('scr-login');
+}
+
+function renderMenu() {
+    if(!user) return;
+    document.getElementById('u-n').innerText = user.u;
+    document.getElementById('u-c').innerText = user.coins + " C";
+    document.getElementById('mod-color').value = user.modColor;
+    document.getElementById('mod-style').value = user.modStyle;
+    
+    let sData = SKINS.find(x => x.id === user.cur) || SKINS[0];
+    let curS = sData.baseSpeed + user.speedAdd;
+    document.getElementById('speed-stat').innerText = curS.toFixed(2);
+    document.getElementById('speed-fill').style.width = (Math.min(curS / sData.maxSpeed, 1) * 100) + "%";
+
+    let html = '';
+    SKINS.forEach(s => {
+        let isOwned = user.owned.includes(s.id);
+        let isEquipped = user.cur === s.id;
+        html += `<div class="row">
+            <span style="color:${isEquipped?'var(--neon)':'white'}">${s.n}</span>
+            <button onclick="handleSkin(${s.id})" style="background:${isEquipped?'#444':(isOwned?'var(--neon)':'var(--gold)')}; border:none; padding:5px 10px; border-radius:5px; font-weight:bold; min-width:70px;">
+                ${isEquipped?'AKTIF':(isOwned?'PAKAI':s.cost+'C')}
+            </button>
+        </div>`;
+    });
+    document.getElementById('skin-list').innerHTML = html;
+}
+
+function handleSkin(id) {
+    let s = SKINS.find(x => x.id === id);
+    if(user.owned.includes(id)) { user.cur = id; }
+    else if(user.coins >= s.cost) { user.coins -= s.cost; user.owned.push(id); user.cur = id; }
+    else return alert("Koin Kurang!");
+    save(); renderMenu();
+}
+
+function updateMod() { 
+    user.modColor = document.getElementById('mod-color').value; 
+    user.modStyle = document.getElementById('mod-style').value; 
+    save(); 
+}
+
+function upgradeSpeed() {
+    let s = SKINS.find(x => x.id === user.cur);
+    if(s.baseSpeed + user.speedAdd >= s.maxSpeed) return alert("MAX SPEED!");
+    if(user.coins >= 1500) { user.coins -= 1500; user.speedAdd += 0.05; save(); renderMenu(); playSfx(800, 0.1); }
+    else alert("Koin Kurang!");
+}
+
+// GAME ENGINE
+let game = { running:false, stars:[], enemies:[], bullets:[], drops:[], skor:0, px:0, py:0, tx:0, shield:false, hp:3 };
+for(let i=0; i<60; i++) game.stars.push({x:Math.random()*2000, y:Math.random()*2000, s:Math.random()*2});
 
 function start() {
-    nav('none');
-    game = { ...game, running:true, px:cvs.width/2, py:cvs.height*0.8, tx:cvs.width/2, enemies:[], bullets:[], skor:0 };
+    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+    game.px = cvs.width/2; game.py = cvs.height*0.85; game.tx = cvs.width/2;
+    game.skor = 0; game.enemies = []; game.bullets = []; game.drops = []; game.shield = false; game.hp = 3;
+    game.running = true; nav('none');
 }
 
 function loop() {
-    ctx.fillStyle = "rgba(2, 2, 5, 0.25)"; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.fillStyle = 'rgba(2, 2, 5, 0.4)'; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.fillStyle = '#fff';
+    game.stars.forEach(s => { s.y += s.s + 1; if(s.y > cvs.height) s.y = 0; ctx.fillRect(s.x % cvs.width, s.y, s.s, s.s); });
+
     if(game.running) {
-        let s = SKINS.find(x => x.id === user.cur) || SKINS[0];
-        game.px += (game.tx - game.px) * s.speed; game.tilt = (game.tx - game.px) * 0.1;
-        if(Date.now() - game.lastF > s.firerate) { game.bullets.push({x:game.px, y:game.py-20, vip:s.id>=11}); playShootSound(s.id>=11); game.lastF = Date.now(); }
-        game.bullets.forEach((b,i) => {
-            b.y -= 15; ctx.fillStyle = b.vip ? "#00f2ff" : "#fff";
-            ctx.fillRect(b.x-(b.vip?2:1), b.y, b.vip?4:2, 12);
+        let sData = SKINS.find(x => x.id === user.cur) || SKINS[0];
+        let finalSpeed = Math.min(sData.baseSpeed + user.speedAdd, sData.maxSpeed);
+        game.px += (game.tx - game.px) * finalSpeed;
+
+        document.getElementById('hp-fill').style.width = (game.hp/3*100) + "%";
+        document.getElementById('shield-stat').style.display = game.shield ? 'block' : 'none';
+
+        if(Math.random() < 0.15) { game.bullets.push({x:game.px, y:game.py-20}); playSfx(700, 0.05); }
+        game.bullets.forEach((b, i) => {
+            b.y -= 15; ctx.fillStyle = user.modColor; ctx.fillRect(b.x-2, b.y, 4, 15);
             if(b.y < 0) game.bullets.splice(i,1);
         });
-        if(Math.random() < 0.07) game.enemies.push({x:Math.random()*cvs.width, y:-20});
-        game.enemies.forEach((e,i) => {
-            e.y += (5 + game.skor/5000); ctx.fillStyle="#ff3333"; ctx.beginPath(); ctx.arc(e.x, e.y, 15, 0, Math.PI*2); ctx.fill();
-            if(Math.hypot(game.px-e.x, game.py-e.y) < 25) {
-                game.running = false; document.getElementById('final-skor').innerText = game.skor;
-                if(!user.isAdmin){ user.coins+=Math.floor(game.skor/10); db[user.u]=user; saveDB(); }
-                nav('scr-over');
+
+        game.drops.forEach((d, i) => {
+            d.y += 3;
+            ctx.fillStyle = d.t==='coin'?'#ffd700':(d.t==='hp'?'#ff3333':'#00ff88');
+            ctx.beginPath(); ctx.arc(d.x, d.y, 10, 0, Math.PI*2); ctx.fill();
+            if(Math.hypot(game.px-d.x, game.py-d.y) < 30) {
+                if(d.t==='coin') user.coins += 50;
+                else if(d.t==='hp') game.hp = Math.min(3, game.hp+1);
+                else game.shield = true;
+                game.drops.splice(i,1); playSfx(900, 0.1); save();
             }
-            game.bullets.forEach((b,bi) => { if(Math.hypot(b.x-e.x, b.y-e.y) < 22) { game.enemies.splice(i,1); game.bullets.splice(bi,1); game.skor+=100; } });
         });
-        ctx.save(); ctx.translate(game.px, game.py); ctx.rotate(game.tilt);
-        ctx.fillStyle = "orange"; ctx.fillRect(-4, 10, 8, s.id>=11?22:12);
-        if(s.c==='rainbow'){ let g=ctx.createLinearGradient(-15,0,15,0); g.addColorStop(0,"red"); g.addColorStop(1,"blue"); ctx.fillStyle=g; }
-        else ctx.fillStyle=s.c;
-        ctx.beginPath(); ctx.moveTo(0,-25); ctx.lineTo(-20,10); ctx.lineTo(0,3); ctx.lineTo(20,10); ctx.closePath(); ctx.fill();
-        if(s.border){ ctx.strokeStyle=s.border; ctx.lineWidth=3; ctx.stroke(); }
+
+        if(Math.random() < 0.06) {
+            let type = Math.random() < 0.2 ? 'red' : 'white';
+            game.enemies.push({x:Math.random()*cvs.width, y:-40, t: type, hp: (type==='red'?2:1)});
+        }
+        
+        game.enemies.forEach((e, i) => {
+            e.y += (e.t === 'red' ? 6 : 4) + (game.skor/15000);
+            ctx.fillStyle = e.t === 'red' ? "#ff3333" : "white";
+            ctx.fillRect(e.x-15, e.y-15, 30, 30);
+            ctx.strokeStyle = "black"; ctx.strokeRect(e.x-15, e.y-15, 30, 30);
+
+            if(Math.hypot(game.px-e.x, game.py-e.y) < 30) {
+                if(game.shield) game.shield = false; else game.hp -= 1;
+                game.enemies.splice(i,1); playSfx(100, 0.2);
+                if(game.hp <= 0) { game.running = false; nav('scr-over'); document.getElementById('final-skor').innerText = game.skor; }
+            }
+
+            game.bullets.forEach((b, bi) => {
+                if(Math.hypot(b.x-e.x, b.y-e.y) < 25) {
+                    e.hp -= 1; game.bullets.splice(bi,1);
+                    if(e.hp <= 0) {
+                        let r = Math.random();
+                        if(r < 0.35) game.drops.push({x:e.x, y:e.y, t:'coin'});
+                        else if(r < 0.40) game.drops.push({x:e.x, y:e.y, t:'shield'});
+                        else if(r < 0.43) game.drops.push({x:e.x, y:e.y, t:'hp'});
+                        game.enemies.splice(i,1); game.skor += 100; playSfx(300, 0.05);
+                    }
+                }
+            });
+        });
+
+        ctx.save(); ctx.translate(game.px, game.py);
+        if(game.shield) { ctx.strokeStyle="#00ff88"; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(0,0,40,0,Math.PI*2); ctx.stroke(); }
+        ctx.fillStyle = user.modColor;
+        ctx.shadowBlur = 10; ctx.shadowColor = user.modColor;
+        if(user.modStyle==='sharp') { ctx.beginPath(); ctx.moveTo(0,-30); ctx.lineTo(-20,15); ctx.lineTo(20,15); ctx.fill(); }
+        else { ctx.fillRect(-18,-18,36,36); }
         ctx.restore();
+
         document.getElementById('skor-val').innerText = game.skor;
+        document.getElementById('u-c-game').innerText = user.coins;
     }
     requestAnimationFrame(loop);
 }
 
-window.addEventListener('mousemove', e => game.tx = e.clientX);
-window.addEventListener('touchmove', e => { game.tx = e.touches[0].clientX; e.preventDefault(); }, {passive:false});
-cvs.width = window.innerWidth; cvs.height = window.innerHeight; loop();
+const move = (e) => { game.tx = e.touches ? e.touches[0].clientX : e.clientX; };
+window.addEventListener('mousemove', move);
+window.addEventListener('touchstart', move);
+window.addEventListener('touchmove', (e) => { move(e); e.preventDefault(); }, {passive:false});
+loop();
 </script>
 </body>
 </html>
+
+
+
+
+
