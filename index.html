@@ -1,72 +1,9 @@
 
 }
 
-function saveDB() { localStorage.setItem('nd_v9_db', JSON.stringify(db)); }
 
-/* --- ADMIN POWER FUNCTIONS --- */
-function updateAdminList() {
-    const list = document.getElementById('user-list'); list.innerHTML = '';
-    Object.values(db).forEach(u => {
-        const row = document.createElement('div');
-        row.className = 'user-row';
-        
-        let skinOptions = SKINS.map(s => `<option value="${s.id}">${s.n}</option>`).join('');
 
-        row.innerHTML = `
-            <div><b>${u.u}</b> | ${u.coins} C</div>
-            <div class="admin-controls">
-                <input type="number" id="amt-${u.u}" placeholder="Coin">
-                <button class="btn-sml" style="background:var(--gold);color:black" onclick="giveCoin('${u.u}')">Kirim</button>
-                <select id="skn-${u.u}" style="width: 80px;">${skinOptions}</select>
-                <button class="btn-sml" style="background:var(--neon);color:black" onclick="giveSkin('${u.u}')">Beri</button>
-                <button class="btn-sml" style="background:#ff3333" onclick="delUser('${u.u}')">X</button>
-            </div>
-        `;
-        list.appendChild(row);
-    });
-}
-
-function giveCoin(target) {
-    const amt = parseInt(document.getElementById(`amt-${target}`).value);
-    if(isNaN(amt)) return alert("Masukkan jumlah angka!");
-    db[target].coins += amt;
-    saveDB(); updateAdminList();
-    alert(`Berhasil mengirim ${amt} koin ke ${target}`);
-}
-
-function giveSkin(target) {
-    const skinId = parseInt(document.getElementById(`skn-${target}`).value);
-    if(!db[target].owned.includes(skinId)) {
-        db[target].owned.push(skinId);
-        saveDB(); alert(`Skin diberikan ke ${target}`);
-    } else {
-        alert("User sudah punya skin ini");
-    }
-}
-
-function delUser(target) {
-    if(confirm(`Hapus akun ${target}?`)) { delete db[target]; saveDB(); updateAdminList(); }
-}
-
-/* --- GAMEPLAY --- */
-function renderShop() {
-    document.getElementById('u-n').innerText = user.u;
-    document.getElementById('u-c').innerText = user.coins + " C";
-    const g = document.getElementById('skin-grid'); g.innerHTML = '';
-    SKINS.forEach(s => {
-        let own = user.owned.includes(s.id);
-        if(!own && s.cost === 0) return;
-        let d = document.createElement('div'); d.className = `item ${user.cur === s.id ? 'active' : ''}`;
-        let bg = s.c === 'rainbow' ? 'linear-gradient(red, blue)' : s.c;
-        d.innerHTML = `<div class="pre" style="background:${bg}; border:${s.border?'1px solid '+s.border:'none'}"></div><div style="font-size:8px">${s.n}</div><div style="color:var(--gold)">${own?'PAKAI':s.cost}</div>`;
-        d.onclick = () => { 
-            if(own) user.cur=s.id; 
-            else if(user.coins>=s.cost){ user.coins-=s.cost; user.owned.push(s.id); user.cur=s.id; }
-            if(!user.isAdmin){ db[user.u]=user; saveDB(); }
-            renderShop();
-        };
-        g.appendChild(d);
-    });
+});
 }
 
 let game = { running:false, px:0, py:0, tx:0, tilt:0, enemies:[], bullets:[], lastF:0, skor:0 };
