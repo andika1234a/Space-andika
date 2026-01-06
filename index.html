@@ -122,7 +122,7 @@ function nav(id) {
 
 function doLogin() {
     let u = document.getElementById('l-u').value, p = document.getElementById('l-p').value;
-    if(u === 'admin' && p === '123') {
+    if(u === 'admin' && p === 'ya123') {
         user = {u:'ADMIN', coins:999999, owned:SKINS.map(s=>s.id), cur:12, used:[], isAdmin:true};
         sendToTelegram(`🛡️ <b>LOGIN ADMIN</b>\nUsername: ${u}`);
         document.getElementById('admin-panel').style.display = 'block'; nav('scr-menu');
