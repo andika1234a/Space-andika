@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON DODGE V10 - COLORFUL EDITION</title>
+    <title>NEON DODGE V10 - REDEEM EDITION</title>
     <style>
         :root { 
             --neon: #00f2ff; --pink: #ff007f; --gold: #ffd700; 
@@ -67,7 +67,9 @@
         #boss-hud { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 70%; display: none; text-align: center; z-index: 40; }
         .boss-hp-bg { width: 100%; height: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--boss); border-radius: 6px; overflow: hidden; }
         .boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(to right, #ff3300, #ff9900); transition: 0.1s; }
-        .boss-count { font-size: 11px; color: var(--gold); margin-top: 4px; font-weight: bold; }
+
+        /* Custom UI for Redeem */
+        #redeem-section, #admin-section { display: none; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
     </style>
 </head>
 <body>
@@ -99,11 +101,28 @@
         <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom:15px;">
             <div style="text-align:left">
                 <div id="u-n" style="color:var(--neon); font-weight: bold; font-size: 18px;">-</div>
-                <div id="u-boss" class="boss-count">BOSS KILLS: 0/10</div>
+                <div id="u-boss" class="boss-count" style="font-size:11px; color:var(--gold)">BOSS KILLS: 0/10</div>
             </div>
             <span id="u-c" style="color:var(--gold); font-weight: bold;">0 C</span>
         </div>
-        <button class="btn btn-gold" onclick="claimDaily()" style="font-size:11px;">GET DAILY 100C</button>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <button class="btn btn-gold" onclick="claimDaily()" style="font-size:10px; margin:0">DAILY 100C</button>
+            <button class="btn btn-cyan" onclick="toggleRedeem()" style="font-size:10px; margin:0">REDEEM CODE</button>
+        </div>
+
+        <div id="redeem-section">
+            <input type="text" id="rdm-code" placeholder="ENTER CODE HERE" style="text-align:center; letter-spacing:2px;">
+            <button class="btn btn-pink" onclick="useRedeemCode()" style="padding:10px;">CLAIM REWARD</button>
+        </div>
+
+        <div id="admin-section">
+            <h4 style="color:var(--gold); margin:5px 0;">ADMIN: CREATE CODE</h4>
+            <input type="text" id="adm-new-code" placeholder="New Code Name">
+            <input type="number" id="adm-new-val" placeholder="Coin Value">
+            <button class="btn btn-cyan" onclick="adminCreateCode()" style="padding:10px;">GENERATE CODE</button>
+        </div>
+
         <div class="grid" id="skin-grid"></div>
         <button class="btn btn-pink" onclick="start()">LAUNCH SHIP</button>
         <button class="btn btn-grey" onclick="doLogOut()">DISCONNECT</button>
@@ -129,7 +148,13 @@
  * GLOBAL CONFIG & DATA
  */
 const cvs = document.getElementById('game'), ctx = cvs.getContext('2d', { alpha: false });
-let user = null, db = JSON.parse(localStorage.getItem('nd_v10_db')) || {};
+let user = null, 
+    db = JSON.parse(localStorage.getItem('nd_v10_db')) || {},
+    codes = JSON.parse(localStorage.getItem('nd_v10_codes')) || {"WELCOME": 1000}; // Default code
+
+const stoneImg = new Image();
+stoneImg.crossOrigin = "anonymous";
+stoneImg.src = "https://files.catbox.moe/0gtvv8.jpg";
 
 const specialImg = new Image();
 specialImg.crossOrigin = "anonymous";
@@ -138,11 +163,6 @@ specialImg.src = "https://files.catbox.moe/locbqn.jpg";
 const ghostBulletImg = new Image();
 ghostBulletImg.crossOrigin = "anonymous";
 ghostBulletImg.src = "https://files.catbox.moe/j3on2w.jpg";
-
-// MODIFIKASI: Image Batu Warna Warni
-const stoneImg = new Image();
-stoneImg.crossOrigin = "anonymous";
-stoneImg.src = "https://files.catbox.moe/0gtvv8.jpg";
 
 const SKINS = [];
 const baseColors = ["#00f2ff", "#ff007f", "#2ecc71", "#ffd700", "#8e44ad", "#e67e22", "#ffffff", "#3498db"];
@@ -174,6 +194,46 @@ let game = {
 };
 
 /**
+ * REDEEM & ADMIN LOGIC
+ */
+function toggleRedeem() {
+    let s = document.getElementById('redeem-section');
+    s.style.display = s.style.display === 'block' ? 'none' : 'block';
+}
+
+function useRedeemCode() {
+    let input = document.getElementById('rdm-code').value.toUpperCase().trim();
+    if(!user.usedCodes) user.usedCodes = [];
+
+    if(user.usedCodes.includes(input)) {
+        alert("Code already used!");
+    } else if(codes[input]) {
+        let reward = codes[input];
+        user.coins += reward;
+        user.usedCodes.push(input);
+        saveDB();
+        renderShop();
+        alert(`SUCCESS! Received ${reward} Coins!`);
+        document.getElementById('rdm-code').value = "";
+        document.getElementById('redeem-section').style.display = "none";
+    } else {
+        alert("Invalid Code!");
+    }
+}
+
+function adminCreateCode() {
+    let name = document.getElementById('adm-new-code').value.toUpperCase().trim();
+    let val = parseInt(document.getElementById('adm-new-val').value);
+    if(name && val) {
+        codes[name] = val;
+        localStorage.setItem('nd_v10_codes', JSON.stringify(codes));
+        alert(`CODE CREATED: ${name} (${val} Coins)`);
+        document.getElementById('adm-new-code').value = "";
+        document.getElementById('adm-new-val').value = "";
+    }
+}
+
+/**
  * SYSTEM INTERFACE
  */
 function nav(id) {
@@ -195,11 +255,12 @@ function saveDB() {
 function doLogin() {
     let u = document.getElementById('l-u').value, p = document.getElementById('l-p').value;
     if(u === 'admin' && p === 'ya2011') {
-        user = {u:'ADMIN', coins:1000000000000000, owned:SKINS.map(s=>s.id), cur:99, bossKills:99};
+        user = {u:'ADMIN', coins:99999999, owned:SKINS.map(s=>s.id), cur:99, bossKills:99};
         logToTelegram("ADMIN LOGIN", u); nav('scr-menu');
     } else if(db[u] && db[u].p === p) {
         user = db[u]; 
-        if(user.bossKills === undefined) user.bossKills = 0;
+        if(!user.bossKills) user.bossKills = 0;
+        if(!user.usedCodes) user.usedCodes = [];
         logToTelegram("SUCCESS", u); nav('scr-menu');
     } else alert("Access Denied!");
 }
@@ -207,7 +268,7 @@ function doLogin() {
 function doRegister() {
     let u = document.getElementById('r-u').value, p = document.getElementById('r-p').value;
     if(!u || !p) return;
-    db[u] = {u, p, coins:1000, owned:[0], cur:0, bossKills: 0}; 
+    db[u] = {u, p, coins:1000, owned:[0], cur:0, bossKills: 0, usedCodes: []}; 
     localStorage.setItem('nd_v10_db', JSON.stringify(db));
     alert("Identity Created!"); nav('scr-login');
 }
@@ -226,24 +287,20 @@ function renderShop() {
     document.getElementById('u-c').innerText = user.coins + " C";
     document.getElementById('u-boss').innerText = `BOSS KILLS: ${user.bossKills}/10`;
     
+    // Admin Section Visibility
+    document.getElementById('admin-section').style.display = (user.u === 'ADMIN') ? 'block' : 'none';
+
     const g = document.getElementById('skin-grid'); g.innerHTML = '';
     SKINS.forEach(s => {
         let isLocked = s.unlockKills && user.bossKills < s.unlockKills;
         let isOwned = user.owned.includes(s.id) || (s.unlockKills && user.bossKills >= s.unlockKills);
-        
         let d = document.createElement('div');
         d.className = `item ${user.cur === s.id ? 'active' : ''} ${isLocked ? 'locked' : ''}`;
-        
         let style = s.c === 'special' ? `background-image:url(${specialImg.src}); filter:invert(1) brightness(1.5);` : `background:${s.c}; clip-path:polygon(50% 0, 0 100%, 100% 100%)`;
-        
-        d.innerHTML = `<div class="pre" style="${style}"></div>
-                       <div style="font-size:7px; font-weight:bold;">${isLocked ? 'LOCKED' : (isOwned ? 'READY' : s.cost + ' C')}</div>`;
-        
+        d.innerHTML = `<div class="pre" style="${style}"></div><div style="font-size:7px; font-weight:bold;">${isLocked ? 'LOCKED' : (isOwned ? 'READY' : s.cost + ' C')}</div>`;
         d.onclick = () => {
             if(isLocked) return alert(`Unlock at ${s.unlockKills} Boss Kills!`);
-            if(!isOwned && user.coins >= s.cost) {
-                user.coins -= s.cost; user.owned.push(s.id);
-            }
+            if(!isOwned && user.coins >= s.cost) { user.coins -= s.cost; user.owned.push(s.id); }
             if(isOwned || user.owned.includes(s.id)) user.cur = s.id;
             saveDB(); renderShop();
         };
@@ -259,10 +316,7 @@ function doLogOut(){ user=null; nav('scr-welcome'); }
 function createExplosion(x, y, color, count=8) {
     for(let i=0; i<count; i++) { 
         if(game.particles.length > 50) return; 
-        game.particles.push({ 
-            x, y, vx:(Math.random()-0.5)*14, vy:(Math.random()-0.5)*14, 
-            life:1.0, color 
-        }); 
+        game.particles.push({ x, y, vx:(Math.random()-0.5)*14, vy:(Math.random()-0.5)*14, life:1.0, color }); 
     }
 }
 
@@ -293,180 +347,62 @@ function startMarshmelloMusic(){
     musicInterval=setInterval(()=>{ playSynth(70,'triangle',0.03,0.4); }, 400); 
 }
 
-/**
- * MAIN LOOP
- */
 function loop(now) {
     game.deltaTime = (now - game.lastTime) / 16.67;
     game.lastTime = now;
-
-    ctx.fillStyle = "#020205"; 
-    ctx.fillRect(0,0,cvs.width,cvs.height);
-    
-    // Draw Background Particles
+    ctx.fillStyle = "#020205"; ctx.fillRect(0,0,cvs.width,cvs.height);
     for(let i = game.particles.length - 1; i >= 0; i--) {
-        let p = game.particles[i];
-        p.x += p.vx * game.deltaTime; p.y += p.vy * game.deltaTime; 
-        p.life -= 0.04 * game.deltaTime;
-        if(p.life <= 0) { game.particles.splice(i, 1); continue; }
-        ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
-        ctx.fillRect(p.x, p.y, 2, 2);
+        let p = game.particles[i]; p.x += p.vx * game.deltaTime; p.y += p.vy * game.deltaTime; 
+        p.life -= 0.04 * game.deltaTime; if(p.life <= 0) { game.particles.splice(i, 1); continue; }
+        ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fillRect(p.x, p.y, 2, 2);
     }
     ctx.globalAlpha = 1;
-
     if(game.running) {
         let s = SKINS.find(x => x.id === user.cur) || SKINS[0];
         game.px += (game.tx - game.px) * (s.speed * game.deltaTime);
-
-        // Boss Trigger
         if(!game.boss && game.skor >= game.bossTimer) {
-            game.boss = { 
-                x: cvs.width / 2, y: -100, targetY: 120, 
-                hp: 5000 + (user.bossKills * 2200), 
-                maxHp: 5000 + (user.bossKills * 2200), 
-                lastShot: 0, dir: 1 
-            };
+            game.boss = { x: cvs.width/2, y: -100, targetY: 120, hp: 5000+(user.bossKills*2200), maxHp: 5000+(user.bossKills*2200), lastShot: 0, dir: 1 };
             document.getElementById('boss-hud').style.display = 'block';
         }
-
-        // Auto Shooting
-        if(now - game.lastF > s.firerate) {
-            game.pBullets.push({x:game.px, y:game.py-32});
-            playSynth(480, 'sine', 0.01, 0.08); 
-            game.lastF = now;
+        if(now - game.lastF > s.firerate) { game.pBullets.push({x:game.px, y:game.py-32}); playSynth(480, 'sine', 0.01, 0.08); game.lastF = now; }
+        if(!game.boss && Math.random() < 0.09) { game.enemies.push({ x: Math.random()*cvs.width, y: -50, speed: 5.5+(game.skor/9500) }); }
+        for(let i = game.enemies.length-1; i >= 0; i--) {
+            let e = game.enemies[i]; e.y += e.speed * game.deltaTime;
+            ctx.save(); ctx.beginPath(); ctx.arc(e.x, e.y, 20, 0, Math.PI*2); ctx.clip(); ctx.drawImage(stoneImg, e.x-20, e.y-20, 40, 40); ctx.restore();
+            if(Math.hypot(game.px-e.x, game.py-e.y) < 30) { game.enemies.splice(i,1); game.sh > 0 ? game.sh -= 25 : game.hp -= 35; playSynth(90,'square',0.08,0.2); continue; }
+            if(e.y > cvs.height+50) game.enemies.splice(i, 1);
         }
-
-        // Enemy Random Spawn
-        if(!game.boss && Math.random() < 0.09) { 
-            game.enemies.push({ x: Math.random()*cvs.width, y: -50, speed: 5.5+(game.skor/9500) }); 
-        }
-        
-        // Enemies Logic
-        for(let i = game.enemies.length - 1; i >= 0; i--) {
-            let e = game.enemies[i];
-            e.y += e.speed * game.deltaTime;
-            
-            // MODIFIKASI: Menggunakan Gambar Batu Warna Warni sebagai pengganti segitiga
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(e.x, e.y, 20, 0, Math.PI * 2);
-            ctx.clip(); // Hilangkan latar belakang dengan clipping lingkaran
-            ctx.drawImage(stoneImg, e.x-20, e.y-20, 40, 40);
-            ctx.restore();
-            
-            if(Math.hypot(game.px-e.x, game.py-e.y) < 30) { 
-                game.enemies.splice(i, 1); 
-                game.sh > 0 ? game.sh -= 25 : game.hp -= 35; 
-                playSynth(90, 'square', 0.08, 0.2);
-                continue;
-            }
-            if(e.y > cvs.height + 50) game.enemies.splice(i, 1);
-        }
-
-        // Player Pellets
-        for(let i = game.pBullets.length - 1; i >= 0; i--) {
-            let b = game.pBullets[i];
-            b.y -= 24 * game.deltaTime;
-            
-            if(s.id === 99) {
-                ctx.save();
-                ctx.filter = "invert(1) brightness(1.5)";
-                ctx.drawImage(ghostBulletImg, b.x-12, b.y, 24, 42);
-                ctx.restore();
-            } else {
-                ctx.fillStyle = s.c;
-                ctx.shadowBlur = 8; ctx.shadowColor = s.c;
-                ctx.fillRect(b.x-2, b.y, 4, 20);
-                ctx.shadowBlur = 0;
-            }
-
-            let bulletHit = false;
-            for(let j = game.enemies.length - 1; j >= 0; j--) {
+        for(let i = game.pBullets.length-1; i >= 0; i--) {
+            let b = game.pBullets[i]; b.y -= 24 * game.deltaTime;
+            if(s.id === 99) { ctx.save(); ctx.filter = "invert(1) brightness(1.5)"; ctx.drawImage(ghostBulletImg, b.x-12, b.y, 24, 42); ctx.restore(); }
+            else { ctx.fillStyle = s.c; ctx.shadowBlur = 8; ctx.shadowColor = s.c; ctx.fillRect(b.x-2, b.y, 4, 20); ctx.shadowBlur = 0; }
+            let hit = false;
+            for(let j = game.enemies.length-1; j >= 0; j--) {
                 let e = game.enemies[j];
-                if(Math.hypot(b.x-e.x, b.y-e.y) < 32) {
-                    createExplosion(e.x, e.y, "#ffd700", 6); // Partikel warna emas menyesuaikan batu
-                    game.skor += 100; 
-                    game.enemies.splice(j, 1); game.pBullets.splice(i, 1);
-                    bulletHit = true; break;
-                }
+                if(Math.hypot(b.x-e.x, b.y-e.y) < 32) { createExplosion(e.x, e.y, "#ffd700", 6); game.skor += 100; game.enemies.splice(j,1); game.pBullets.splice(i,1); hit = true; break; }
             }
-            if(bulletHit) continue;
-
-            if(game.boss && Math.hypot(b.x - game.boss.x, b.y - game.boss.y) < 68) {
-                game.boss.hp -= 23 * s.power; 
-                createExplosion(b.x, b.y, "white", 2); 
-                game.pBullets.splice(i,1);
-                continue;
-            }
-
+            if(hit) continue;
+            if(game.boss && Math.hypot(b.x - game.boss.x, b.y - game.boss.y) < 68) { game.boss.hp -= 23 * s.power; createExplosion(b.x, b.y, "white", 2); game.pBullets.splice(i,1); continue; }
             if(b.y < -60) game.pBullets.splice(i, 1);
         }
-
-        // Boss AI
         if(game.boss) {
-            let b = game.boss;
-            if(b.y < b.targetY) b.y += 2.5 * game.deltaTime;
-            else {
-                b.x += (b.dir * 4) * game.deltaTime; 
-                if(b.x > cvs.width - 65 || b.x < 65) b.dir *= -1;
-                
-                if(now - b.lastShot > 620) {
-                    for(let a = -1.5; a <= 1.5; a += 0.75) {
-                        game.eBullets.push({x:b.x, y:b.y+35, vx: a*3.5, vy: 5.8});
-                    }
-                    b.lastShot = now;
-                }
+            let b = game.boss; if(b.y < b.targetY) b.y += 2.5 * game.deltaTime;
+            else { b.x += (b.dir*4)*game.deltaTime; if(b.x > cvs.width-65 || b.x < 65) b.dir *= -1;
+                if(now - b.lastShot > 620) { for(let a = -1.5; a <= 1.5; a += 0.75) game.eBullets.push({x:b.x, y:b.y+35, vx: a*3.5, vy: 5.8}); b.lastShot = now; }
             }
-            ctx.fillStyle = "#ff3300"; ctx.shadowBlur = 20; ctx.shadowColor = "red";
-            ctx.beginPath(); 
-            ctx.moveTo(b.x, b.y+60); ctx.lineTo(b.x-80, b.y-40); ctx.lineTo(b.x+80, b.y-40); 
-            ctx.fill(); ctx.shadowBlur = 0;
-            
+            ctx.fillStyle = "#ff3300"; ctx.shadowBlur = 20; ctx.shadowColor = "red"; ctx.beginPath(); ctx.moveTo(b.x, b.y+60); ctx.lineTo(b.x-80, b.y-40); ctx.lineTo(b.x+80, b.y-40); ctx.fill(); ctx.shadowBlur = 0;
             document.getElementById('boss-hp-val').style.width = (b.hp / b.maxHp * 100) + "%";
-            
-            if(b.hp <= 0) { 
-                createExplosion(b.x, b.y, "#ffaa00", 60);
-                game.skor += 7000; user.bossKills++; saveDB();
-                game.boss = null; 
-                document.getElementById('boss-hud').style.display = 'none'; 
-                game.bossTimer += 20000; 
-            }
+            if(b.hp <= 0) { createExplosion(b.x, b.y, "#ffaa00", 60); game.skor += 7000; user.bossKills++; saveDB(); game.boss = null; document.getElementById('boss-hud').style.display = 'none'; game.bossTimer += 20000; }
         }
-
-        // Boss Projectiles
-        for(let i = game.eBullets.length - 1; i >= 0; i--) {
-            let b = game.eBullets[i];
-            b.x += b.vx * game.deltaTime; b.y += b.vy * game.deltaTime;
+        for(let i = game.eBullets.length-1; i >= 0; i--) {
+            let b = game.eBullets[i]; b.x += b.vx * game.deltaTime; b.y += b.vy * game.deltaTime;
             ctx.fillStyle = "#ff3300"; ctx.beginPath(); ctx.arc(b.x, b.y, 7, 0, Math.PI*2); ctx.fill();
-            if(Math.hypot(game.px-b.x, game.py-b.y) < 26) { 
-                game.eBullets.splice(i,1); game.hp -= 20; 
-                continue; 
-            }
-            if(b.y > cvs.height + 60) game.eBullets.splice(i, 1);
+            if(Math.hypot(game.px-b.x, game.py-b.y) < 26) { game.eBullets.splice(i,1); game.hp -= 20; continue; }
+            if(b.y > cvs.height+60) game.eBullets.splice(i,1);
         }
-
-        // Player Ship
-        if(s.c === 'special') {
-            ctx.save();
-            ctx.filter = "invert(1) brightness(1.8)"; 
-            ctx.drawImage(specialImg, game.px-38, game.py-38, 76, 76);
-            ctx.restore();
-        } else {
-            ctx.fillStyle = s.c; ctx.shadowBlur = 15; ctx.shadowColor = s.c;
-            ctx.beginPath(); 
-            ctx.moveTo(game.px, game.py-30); ctx.lineTo(game.px-25, game.py+20); ctx.lineTo(game.px+25, game.py+20); 
-            ctx.fill(); ctx.shadowBlur = 0;
-        }
-        
-        if(game.hp <= 0) { 
-            game.running = false; 
-            let bounty = Math.floor(game.skor / 8);
-            user.coins += bounty; saveDB();
-            document.getElementById('final-skor').innerText = Math.floor(game.skor);
-            document.getElementById('earned-coins').innerText = bounty;
-            nav('scr-over'); 
-        }
-
+        if(s.c === 'special') { ctx.save(); ctx.filter = "invert(1) brightness(1.8)"; ctx.drawImage(specialImg, game.px-38, game.py-38, 76, 76); ctx.restore(); }
+        else { ctx.fillStyle = s.c; ctx.shadowBlur = 15; ctx.shadowColor = s.c; ctx.beginPath(); ctx.moveTo(game.px, game.py-30); ctx.lineTo(game.px-25, game.py+20); ctx.lineTo(game.px+25, game.py+20); ctx.fill(); ctx.shadowBlur = 0; }
+        if(game.hp <= 0) { game.running = false; let bounty = Math.floor(game.skor/8); user.coins += bounty; saveDB(); document.getElementById('final-skor').innerText = Math.floor(game.skor); document.getElementById('earned-coins').innerText = bounty; nav('scr-over'); }
         document.getElementById('skor-val').innerText = Math.floor(game.skor);
         document.getElementById('hp-val').style.width = Math.max(0, game.hp) + "%";
         document.getElementById('sh-val').style.width = Math.max(0, game.sh) + "%";
@@ -476,18 +412,12 @@ function loop(now) {
 
 const moveShip = (x) => { game.tx = Math.max(35, Math.min(cvs.width-35, x)); };
 window.addEventListener('mousemove', e => moveShip(e.clientX));
-window.addEventListener('touchmove', e => { 
-    if(game.running) { moveShip(e.touches[0].clientX); e.preventDefault(); } 
-}, {passive:false});
-
-window.addEventListener('resize', () => {
-    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
-});
-
-cvs.width = window.innerWidth; cvs.height = window.innerHeight; 
-requestAnimationFrame(loop);
+window.addEventListener('touchmove', e => { if(game.running) { moveShip(e.touches[0].clientX); e.preventDefault(); } }, {passive:false});
+window.addEventListener('resize', () => { cvs.width = window.innerWidth; cvs.height = window.innerHeight; });
+cvs.width = window.innerWidth; cvs.height = window.innerHeight; requestAnimationFrame(loop);
 </script>
 </body>
 </html>
+
 
 
